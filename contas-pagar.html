@@ -264,9 +264,14 @@
     </div>
     <div class="summary">
       <div class="card"><div class="label">Valor Estimado Total</div><div class="value amber" id="sh-total"></div></div>
+      <div class="card"><div class="label">Valor Estimado Taques</div><div class="value amber" id="sh-taques"></div></div>
       <div class="card"><div class="label">Contratos Pendentes</div><div class="value amber" id="sh-count"></div></div>
     </div>
-    <div class="hon-grid" id="hon-grid"></div>
+    <table class="honorarios-table" id="hon-table-container">
+      <thead><tr><th>Data</th><th>Cliente / Descrição</th><th class="col-status">Situação</th><th class="col-value">Valor Total (R$)</th><th class="col-value">Valor Taques (R$)</th><th class="col-actions">Ação</th></tr></thead>
+      <tbody id="tbody-honorarios"></tbody>
+      <tfoot id="tfoot-honorarios"><tr><td colspan="3">Total Geral</td><td class="col-value" id="foot-hon-total"></td><td class="col-value" id="foot-hon-taques"></td><td></td></tr></tfoot>
+    </table>
     <div id="hon-empty" class="empty-msg" style="display:none;background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">Nenhum honorario pendente de definicao.</div>
   </div>
 </div>
@@ -327,8 +332,14 @@
     <h2>Novo Honorario a Definir</h2>
     <label>Cliente</label><input type="text" id="inp-h-client" placeholder="Ex: Maria da Silva">
     <label>Caso / Descricao</label><input type="text" id="inp-h-title" placeholder="Ex: Acao trabalhista - Empresa XYZ">
-    <div class="form-row"><div><label>Valor estimado (R$)</label><input type="text" id="inp-h-value" placeholder="Ex: 15.000,00" inputmode="decimal"></div><div><label>Data do contrato</label><input type="date" id="inp-h-date"></div></div>
-    <label>Situacao / Motivo</label><input type="text" id="inp-h-situacao" placeholder="Ex: Aguardando definicao de parcelas com o cliente">
+    <div class="form-row">
+      <div><label>Valor total (R$)</label><input type="text" id="inp-h-value" placeholder="Ex: 15.000,00" inputmode="decimal"></div>
+      <div><label>Valor Taques (R$)</label><input type="text" id="inp-h-taques" placeholder="Ex: 7.500,00" inputmode="decimal"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Data do contrato</label><input type="date" id="inp-h-date"></div>
+      <div><label>Situacao</label><input type="text" id="inp-h-situacao" placeholder="Ex: Aguardando definicao"></div>
+    </div>
     <label>Observacoes</label><textarea id="inp-h-obs" placeholder="Detalhes adicionais..."></textarea>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('honorario')">Cancelar</button>
@@ -429,12 +440,12 @@ async function load(){
     updateSaveStatus();
   }
   
-  const migKey = 'mig_hon_1';
+  const migKey = 'mig_hon_2';
   if(!localStorage.getItem(migKey)) {
-    store.honorarios.push({client: 'Fábio Rodrigo Neves', title: 'Honorários - Definição', value: 8000, date: TODAY_STR, situacao: 'Aguardando definição', obs: 'Líquido escritório (Taques): R$ 4.000,00 (50%)', createdAt: new Date().toISOString()});
-    store.honorarios.push({client: 'Edivaldo Dobrychtop', title: 'Honorários - Definição', value: 12000, date: TODAY_STR, situacao: 'Aguardando definição', obs: 'Líquido escritório (Taques): R$ 6.000,00 (50%)', createdAt: new Date().toISOString()});
-    store.honorarios.push({client: 'Pedro Colaço', title: 'Honorários - Definição', value: 8000, date: TODAY_STR, situacao: 'Aguardando definição', obs: 'Líquido escritório (Taques): R$ 4.000,00 (50%)', createdAt: new Date().toISOString()});
-    store.honorarios.push({client: 'Faurin Batista', title: 'Honorários - Definição', value: 30000, date: TODAY_STR, situacao: 'Aguardando definição', obs: 'Líquido escritório (Taques): R$ 15.000,00 (50%)', createdAt: new Date().toISOString()});
+    store.honorarios.push({client: 'Fábio Rodrigo Neves', title: 'Honorários - Definição', value: 8000, taquesValue: 4000, date: TODAY_STR, situacao: 'Aguardando definição', obs: '50% Taques', createdAt: new Date().toISOString()});
+    store.honorarios.push({client: 'Edivaldo Dobrychtop', title: 'Honorários - Definição', value: 12000, taquesValue: 6000, date: TODAY_STR, situacao: 'Aguardando definição', obs: '50% Taques', createdAt: new Date().toISOString()});
+    store.honorarios.push({client: 'Pedro Colaço', title: 'Honorários - Definição', value: 8000, taquesValue: 4000, date: TODAY_STR, situacao: 'Aguardando definição', obs: '50% Taques', createdAt: new Date().toISOString()});
+    store.honorarios.push({client: 'Faurin Batista', title: 'Honorários - Definição', value: 30000, taquesValue: 15000, date: TODAY_STR, situacao: 'Aguardando definição', obs: '50% Taques', createdAt: new Date().toISOString()});
     localStorage.setItem(migKey, '1');
     save(false);
   }
@@ -646,30 +657,43 @@ function renderReceber(){
 
 function renderHonorarios(){
   const list=store.honorarios;
-  const grid=document.getElementById('hon-grid');
+  const tbody=document.getElementById('tbody-honorarios');
   const empty=document.getElementById('hon-empty');
+  const tableContainer=document.getElementById('hon-table-container');
   document.getElementById('badge-honorarios').textContent=list.length;
   document.getElementById('badge-honorarios').style.display=list.length?'':'none';
-  if(!list.length){grid.innerHTML='';empty.style.display='block';
-    document.getElementById('sh-total').textContent='R$ 0,00';document.getElementById('sh-count').textContent='0';return}
+  if(!list.length){
+    tbody.innerHTML='';
+    tableContainer.style.display='none';
+    empty.style.display='block';
+    document.getElementById('sh-total').textContent='R$ 0,00';
+    document.getElementById('sh-taques').textContent='R$ 0,00';
+    document.getElementById('sh-count').textContent='0';
+    return;
+  }
   empty.style.display='none';
-  const total=list.reduce((s,h)=>s+h.value,0);
+  tableContainer.style.display='';
+  const total=list.reduce((s,h)=>s+(h.value||0),0);
+  const taquesTotal=list.reduce((s,h)=>s+(h.taquesValue||0),0);
   document.getElementById('sh-total').textContent='R$ '+fmt(total);
+  document.getElementById('sh-taques').textContent='R$ '+fmt(taquesTotal);
   document.getElementById('sh-count').textContent=list.length;
-  grid.innerHTML='';
+  tbody.innerHTML='';
   list.forEach((h,i)=>{
-    const card=document.createElement('div');card.className='hon-card';
-    card.innerHTML=`<h3>${h.title}</h3><div class="hon-client">${h.client}</div>
-      <div class="hon-info"><strong>Valor estimado:</strong> R$ ${fmt(h.value)}</div>
-      ${h.situacao?'<div class="hon-info"><strong>Situacao:</strong> '+h.situacao+'</div>':''}
-      ${h.obs?'<div class="hon-obs">'+h.obs+'</div>':''}
-      <div class="hon-date">Contrato: ${fmtDateFull(h.date)}</div>
-      <div class="hon-actions">
-        <button class="btn btn-blue btn-sm" onclick="convertHonorario(${i})">Definir contrato</button>
-        <button class="btn btn-red btn-sm" onclick="removeHonorario(${i})">Remover</button>
-      </div>`;
-    grid.appendChild(card);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${fmtDateFull(h.date)}</td>
+      <td><strong>${h.client}</strong><span class="detail-sub">${h.title}</span><span class="detail-sub" style="font-style:italic;font-size:0.75rem">${h.obs||''}</span></td>
+      <td class="col-status">${h.situacao||'-'}</td>
+      <td class="col-value">${fmt(h.value||0)}</td>
+      <td class="col-value">${fmt(h.taquesValue||0)}</td>
+      <td class="col-actions">
+        <button class="btn btn-blue btn-sm" style="margin-bottom:4px;width:100%" onclick="convertHonorario(${i})">Definir</button>
+        <button class="btn btn-red btn-sm" style="width:100%" onclick="removeHonorario(${i})">Remover</button>
+      </td>`;
+    tbody.appendChild(tr);
   });
+  document.getElementById('foot-hon-total').textContent=fmt(total);
+  document.getElementById('foot-hon-taques').textContent=fmt(taquesTotal);
 }
 
 function toggle(mod,idx){const list=getList(mod);list[idx].paid=!list[idx].paid;save();render()}
@@ -735,15 +759,17 @@ function addComplexa(){const cl=document.getElementById('inp-c-client').value.tr
 // ── Modal: Honorario ──
 function openModalHonorario(){
   document.getElementById('inp-h-client').value='';document.getElementById('inp-h-title').value='';
-  document.getElementById('inp-h-value').value='';document.getElementById('inp-h-date').value=TODAY_STR;
+  document.getElementById('inp-h-value').value='';document.getElementById('inp-h-taques').value='';
+  document.getElementById('inp-h-date').value=TODAY_STR;
   document.getElementById('inp-h-situacao').value='';document.getElementById('inp-h-obs').value='';
   document.getElementById('overlay-honorario').classList.add('active');setTimeout(()=>document.getElementById('inp-h-client').focus(),100)}
 function addHonorario(){const cl=document.getElementById('inp-h-client').value.trim(),ti=document.getElementById('inp-h-title').value.trim(),
-  rv=document.getElementById('inp-h-value').value.trim(),dt=document.getElementById('inp-h-date').value,
+  rv=document.getElementById('inp-h-value').value.trim(),rt=document.getElementById('inp-h-taques').value.trim(),dt=document.getElementById('inp-h-date').value,
   sit=document.getElementById('inp-h-situacao').value.trim(),ob=document.getElementById('inp-h-obs').value.trim();
   if(!cl||!ti){alert('Preencha cliente e descricao.');return}
   const val=rv?parseVal(rv):0;
-  store.honorarios.push({client:cl,title:ti,value:isNaN(val)?0:val,date:dt||TODAY_STR,situacao:sit,obs:ob,createdAt:new Date().toISOString()});
+  const tq=rt?parseVal(rt):0;
+  store.honorarios.push({client:cl,title:ti,value:isNaN(val)?0:val,taquesValue:isNaN(tq)?0:tq,date:dt||TODAY_STR,situacao:sit,obs:ob,createdAt:new Date().toISOString()});
   save();closeModal('honorario');render()}
 function removeHonorario(i){if(confirm('Remover este honorario?')){store.honorarios.splice(i,1);save();render()}}
 function convertHonorario(i){const h=store.honorarios[i];openComplexaModal({client:h.client,title:h.title,value:h.value,date:h.date,obs:h.obs});
