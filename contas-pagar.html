@@ -173,11 +173,11 @@
     <span class="icon">&#128203;</span> Hon. a Definir <span class="sidebar-badge yellow" id="badge-honorarios">0</span>
   </div>
   <div class="sidebar-spacer"></div>
-  <div class="sidebar-section">Seguranca</div>
+  <div class="sidebar-section">Seguranca (Firebase)</div>
   <div class="sidebar-tools">
     <button class="btn btn-green btn-sidebar" onclick="exportBackup()">Exportar Backup</button>
     <button class="btn btn-primary btn-sidebar" onclick="document.getElementById('backup-file').click()">Restaurar Backup</button>
-    <div class="save-status" id="save-status">Dados locais ativos.</div>
+    <div class="save-status" id="save-status">Conectando...</div>
     <input type="file" id="backup-file" accept="application/json" style="display:none" onchange="importBackup(event)">
   </div>
 </aside>
@@ -337,7 +337,23 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBpX11wOCdIwV26O9w3WwqUjtKkLqJejPo",
+  authDomain: "financas-marco-2026.firebaseapp.com",
+  projectId: "financas-marco-2026",
+  storageBucket: "financas-marco-2026.firebasestorage.app",
+  messagingSenderId: "173551902595",
+  appId: "1:173551902595:web:62a285fe9f1b034c0260b6"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const MONTHS=['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const STORAGE_KEY='fin-data-v5';
 const LEGACY_STORAGE_KEY='fin-data-v4';
@@ -372,17 +388,18 @@ function ensureStoreShape(data){
   };
 }
 function getBackupCount(){try{return JSON.parse(localStorage.getItem(BACKUP_KEY)||'[]').length}catch(e){return 0}}
-function updateSaveStatus(savedAt){
+function updateSaveStatus(savedAt, isCloud = false){
   const el=document.getElementById('save-status'); if(!el)return;
   let txt='Dados locais ativos.';
-  if(savedAt)txt='Ultimo salvamento: '+fmtDateTime(savedAt)+'.';
-  else{
+  if(savedAt){
+    txt = isCloud ? 'Salvo na nuvem: '+fmtDateTime(savedAt) : 'Salvo local: '+fmtDateTime(savedAt);
+  } else {
     try{
       const meta=JSON.parse(localStorage.getItem(META_KEY)||'null');
       if(meta&&meta.lastSavedAt)txt='Ultimo salvamento: '+fmtDateTime(meta.lastSavedAt)+'.';
     }catch(e){}
   }
-  el.textContent=txt+' Backups locais: '+getBackupCount()+'.';
+  el.textContent=txt;
 }
 function saveBackupSnapshot(savedAt){
   try{
@@ -391,29 +408,49 @@ function saveBackupSnapshot(savedAt){
     localStorage.setItem(BACKUP_KEY,JSON.stringify(backups.slice(0,MAX_BACKUPS)));
   }catch(e){}
 }
-function load(){
+async function load(){
   try{
+    const docRef = doc(db, 'financeiro', 'store_v5');
+    const docSnap = await getDoc(docRef);
+    if(docSnap.exists()){
+      store = ensureStoreShape(docSnap.data());
+      updateSaveStatus(new Date(), true);
+    } else {
+      // Fallback local
+      const raw=localStorage.getItem(STORAGE_KEY)||localStorage.getItem(LEGACY_STORAGE_KEY);
+      store=raw?ensureStoreShape(JSON.parse(raw)):defaultStore();
+      if(raw) save(false);
+      else updateSaveStatus();
+    }
+  }catch(e){
+    console.error("Firebase load error", e);
     const raw=localStorage.getItem(STORAGE_KEY)||localStorage.getItem(LEGACY_STORAGE_KEY);
     store=raw?ensureStoreShape(JSON.parse(raw)):defaultStore();
-    if(raw&&!localStorage.getItem(STORAGE_KEY))save(false);
-  }catch(e){
-    store=defaultStore();
-    alert('Nao foi possivel ler os dados salvos no navegador.');
+    updateSaveStatus();
   }
-  updateSaveStatus();
+  
+  if(ENABLE_DEMO_DATA)seed();
+  render();
 }
-function save(showAlert=true){
+async function save(showAlert=true){
   try{
     store=ensureStoreShape(store);
     const savedAt=new Date().toISOString();
+    
+    // Save to Local
     localStorage.setItem(STORAGE_KEY,JSON.stringify(store));
     localStorage.setItem(META_KEY,JSON.stringify({lastSavedAt:savedAt}));
     saveBackupSnapshot(savedAt);
-    updateSaveStatus(savedAt);
+
+    // Save to Firebase
+    await setDoc(doc(db, 'financeiro', 'store_v5'), store);
+    updateSaveStatus(savedAt, true);
+    
     return true;
   }catch(e){
-    updateSaveStatus();
-    if(showAlert)alert('Falha ao salvar. Exporte um backup antes de continuar.');
+    console.error("Firebase save error", e);
+    updateSaveStatus(new Date().toISOString(), false);
+    if(showAlert)alert('Aviso: Falha ao salvar na nuvem (Firebase). Os dados foram salvos localmente.');
     return false;
   }
 }
@@ -481,9 +518,9 @@ function importBackup(event){
     try{
       const parsed=JSON.parse(ev.target.result);
       const nextStore=ensureStoreShape(parsed&&parsed.data?parsed.data:parsed);
-      if(!confirm('Restaurar este backup e substituir os dados atuais do navegador?'))return;
+      if(!confirm('Restaurar este backup e substituir os dados atuais na nuvem?'))return;
       store=nextStore;
-      if(save())render();
+      save(true).then(()=>render());
     }catch(e){
       alert('Arquivo de backup invalido.');
     }finally{
@@ -707,7 +744,30 @@ document.addEventListener('keydown',function(e){if(document.querySelector('.over
   if(e.key==='ArrowLeft'&&(curPage==='pagar'||curPage==='receber'))changeMonth(curPage,-1);
   if(e.key==='ArrowRight'&&(curPage==='pagar'||curPage==='receber'))changeMonth(curPage,1)});
 
-load();if(ENABLE_DEMO_DATA)seed();render();
+// ── Exposicao Global ──
+window.switchPage = switchPage;
+window.changeMonth = changeMonth;
+window.openModalPagar = openModalPagar;
+window.addContaPagar = addContaPagar;
+window.openModalReceber = openModalReceber;
+window.addSimples = addSimples;
+window.openComplexaModal = openComplexaModal;
+window.addDistRow = addDistRow;
+window.removeDistRow = removeDistRow;
+window.calcComplex = calcComplex;
+window.addComplexa = addComplexa;
+window.openModalHonorario = openModalHonorario;
+window.addHonorario = addHonorario;
+window.removeHonorario = removeHonorario;
+window.convertHonorario = convertHonorario;
+window.exportBackup = exportBackup;
+window.importBackup = importBackup;
+window.toggle = toggle;
+window.markVencidaPaid = markVencidaPaid;
+window.closeModal = closeModal;
+
+// Initialize
+load();
 </script>
 </body>
 </html>
