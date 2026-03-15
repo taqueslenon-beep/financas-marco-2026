@@ -1212,9 +1212,40 @@
         <div class="page-header">
           <h1>Gestão de Contratos</h1>
         </div>
-        <div class="dash-section" style="text-align: center; padding: 80px 20px;">
-          <h2 style="justify-content: center; border: none; font-size: 1.6rem; color: #64748b; margin-bottom: 10px;">🚧 Módulo em Desenvolvimento 🚧</h2>
-          <p class="dash-desc" style="font-size: 1.05rem;">Em breve você poderá visualizar e gerenciar todos os seus contratos ativos e finalizados por aqui.</p>
+        <table class="receber-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Contrato / Objeto</th>
+              <th class="col-value">Valor Total (R$)</th>
+              <th class="col-status">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-contratos"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal: Detalhes do Contrato -->
+    <div class="overlay" id="overlay-contrato-detalhe" onclick="if (event.target === this) closeModal('contrato-detalhe');">
+      <div class="modal" style="width: 700px; max-width: 95vw;">
+        <h2 id="modal-contract-title">Detalhes do Contrato</h2>
+        <div style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+          <table class="receber-table" style="box-shadow: none; border: 1px solid #eee;">
+            <thead style="background: #4a5568;">
+              <tr>
+                <th class="col-check">Check</th>
+                <th>Data</th>
+                <th>Parcela</th>
+                <th class="col-value">Valor (R$)</th>
+                <th class="col-status">Status</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-contrato-parcelas"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('contrato-detalhe')">Fechar</button>
         </div>
       </div>
     </div>
@@ -1572,7 +1603,7 @@
       }
 
       function defaultStore() {
-        return { pagar: {}, receber: {}, honorarios: [], pagarPF: {}, receberPF: {} };
+        return { pagar: {}, receber: {}, honorarios: [], pagarPF: {}, receberPF: {}, contratos: [] };
       }
       function ensureStoreShape(data) {
         const safe = data && typeof data === "object" ? data : {};
@@ -1582,6 +1613,7 @@
           honorarios: Array.isArray(safe.honorarios) ? safe.honorarios : [],
           pagarPF: safe.pagarPF && typeof safe.pagarPF === "object" ? safe.pagarPF : {},
           receberPF: safe.receberPF && typeof safe.receberPF === "object" ? safe.receberPF : {},
+          contratos: Array.isArray(safe.contratos) ? safe.contratos : [],
         };
       }
       function getBackupCount() {
@@ -1811,6 +1843,60 @@
           );
 
           localStorage.setItem(migKeyPF2, '1');
+          save(false);
+        }
+
+        const migKeyContratos1 = 'mig_contratos_2';
+        if (!localStorage.getItem(migKeyContratos1)) {
+          store.contratos = store.contratos || [];
+          
+          const cidFabio = "cont-fabio-1";
+          store.contratos.push({ id: "cont-marcio-1", client: "Márcio Fabiano Helbing", title: "Contrato", totalValue: 0, startDate: "" });
+          store.contratos.push({ id: "cont-edson-1", client: "Edson Scheck e Rodrigo Balbinotti", title: "Contrato", totalValue: 0, startDate: "" });
+          store.contratos.push({ id: cidFabio, client: "Fábio Rodrigo Neves", title: "Novo contrato - Março 2026", totalValue: 8000, startDate: "2026-02-19" });
+          store.contratos.push({ id: "cont-pedro-1", client: "Pedro Colaço", title: "Novo contrato - Março 2026", totalValue: 0, startDate: "" });
+          store.contratos.push({ id: "cont-edival-1", client: "Edival Dobrychtop", title: "Novo contrato - Março 2026", totalValue: 0, startDate: "" });
+
+          // Installments for Fabio (4 weeks starting Feb 26)
+          const k2 = "2026-02";
+          const k3 = "2026-03";
+          
+          if(!store.receber[k2]) store.receber[k2] = [];
+          if(!store.receber[k3]) store.receber[k3] = [];
+          if(!store.pagar[k2]) store.pagar[k2] = [];
+          if(!store.pagar[k3]) store.pagar[k3] = [];
+
+          const parcelas = [
+            { m: k2, d: "2026-02-26", n: 1 },
+            { m: k3, d: "2026-03-05", n: 2 },
+            { m: k3, d: "2026-03-12", n: 3 },
+            { m: k3, d: "2026-03-19", n: 4 }
+          ];
+
+          parcelas.forEach(p => {
+            store.receber[p.m].push({
+              date: p.d,
+              title: "Honorários - Fábio Rodrigo Neves (" + p.n + "/4)",
+              value: 2000,
+              paid: false,
+              client: "Fábio Rodrigo Neves",
+              type: "complexa",
+              forma: "Transferencia",
+              contractId: cidFabio,
+              dist: [{name: "DF Projetos", value: 1000, type: "repasse"}]
+            });
+            
+            store.pagar[p.m].push({
+              date: p.d,
+              title: "Repasse DF Projetos - Fábio Rodrigo Neves (" + p.n + "/4)",
+              value: 1000,
+              paid: false,
+              auto: true,
+              contractId: cidFabio
+            });
+          });
+
+          localStorage.setItem(migKeyContratos1, "1");
           save(false);
         }
 
@@ -2141,6 +2227,7 @@
         renderReceber();
         renderHonorarios();
         renderDashboard();
+        renderContratos();
         const titles = {
           vencidas: "Contas Vencidas",
           pagar: "Contas a Pagar",
@@ -2383,6 +2470,82 @@
         // 4. Pró-labore Mínimo Pendente
         const prolabore = vencidasPf + pagarPendPf;
         document.getElementById("dash-prolabore").textContent = "R$ " + fmt(prolabore);
+      }
+
+      function renderContratos() {
+        const tbody = document.getElementById("tbody-contratos");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        
+        const list = store.contratos || [];
+        if (!list.length) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">Nenhum contrato cadastrado.</td></tr>';
+          return;
+        }
+        
+        list.forEach((c) => {
+          const tr = document.createElement("tr");
+          let acts = `<button class="btn-sm btn-blue" onclick="openContrato('${c.id}')">Ver parcelas</button>`;
+          tr.innerHTML = `
+            <td><strong>${c.client}</strong></td>
+            <td>${c.title}</td>
+            <td class="col-value">${fmt(c.totalValue || 0)}</td>
+            <td class="col-actions">${acts}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function openContrato(id) {
+        const c = (store.contratos || []).find(x => x.id === id);
+        if (!c) return;
+        
+        document.getElementById("modal-contract-title").textContent = c.client + " - " + c.title;
+        
+        // Find all installments in store.receber for this contractId
+        let parcelas = [];
+        for (const m in store.receber) {
+          store.receber[m].forEach((item, idx) => {
+            if (item.contractId === id) {
+              parcelas.push({ ...item, _m: m, _idx: idx });
+            }
+          });
+        }
+        
+        parcelas.sort((a, b) => a.date.localeCompare(b.date));
+        
+        const tbody = document.getElementById("tbody-contrato-parcelas");
+        tbody.innerHTML = "";
+        
+        if (!parcelas.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">Nenhuma parcela encontrada.</td></tr>';
+        } else {
+          parcelas.forEach((p, idx) => {
+            const tr = document.createElement("tr");
+            if (p.paid) tr.className = "row-received";
+            const lbl = p.paid ? "Recebido" : "Pendente";
+            const cls = p.paid ? "recebido" : "pendente";
+            tr.innerHTML = `
+              <td class="col-check">
+                <input class="check-toggle ${p.paid ? "" : "pending"}" type="checkbox" ${p.paid ? "checked" : ""} onclick="toggleParcelaContrato('${p._m}', ${p._idx}, '${id}')">
+              </td>
+              <td>${fmtDateFull(p.date)}</td>
+              <td>${idx + 1}/${parcelas.length}</td>
+              <td class="col-value">${fmt(p.value)}</td>
+              <td class="col-status"><span class="badge ${cls}" onclick="toggleParcelaContrato('${p._m}', ${p._idx}, '${id}')">${lbl}</span></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+        
+        document.getElementById("overlay-contrato-detalhe").classList.add("active");
+      }
+
+      function toggleParcelaContrato(m, idx, contractId) {
+        store.receber[m][idx].paid = !store.receber[m][idx].paid;
+        save();
+        openContrato(contractId);
+        render();
       }
 
       function toggle(mod, idx) {
@@ -2720,17 +2883,18 @@
             closeModal("simples");
             closeModal("complexa");
             closeModal("honorario");
+            closeModal("contrato-detalhe");
           }
           return;
         }
         if (
           e.key === "ArrowLeft" &&
-          (curPage === "pagar" || curPage === "receber")
+          (curPage === "pagar" || curPage === "receber" || curPage === "dashboard")
         )
           changeMonth(curPage, -1);
         if (
           e.key === "ArrowRight" &&
-          (curPage === "pagar" || curPage === "receber")
+          (curPage === "pagar" || curPage === "receber" || curPage === "dashboard")
         )
           changeMonth(curPage, 1);
       });
@@ -2755,6 +2919,8 @@
       window.exportBackup = exportBackup;
       window.importBackup = importBackup;
       window.toggle = toggle;
+      window.openContrato = openContrato;
+      window.toggleParcelaContrato = toggleParcelaContrato;
       window.markVencidaPaid = markVencidaPaid;
       window.closeModal = closeModal;
 
