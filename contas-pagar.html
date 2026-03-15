@@ -1593,6 +1593,20 @@
           save(false);
         }
 
+        const migKeyPF2 = 'mig_pf_pagar_fev';
+        if (!localStorage.getItem(migKeyPF2)) {
+          const k2 = '2026-02';
+          if (!store.pagarPF[k2]) store.pagarPF[k2] = [];
+          
+          store.pagarPF[k2].push(
+            { date: '2026-02-18', title: 'Band Matriz - Parcela 4/8', value: 317.99, paid: false },
+            { date: '2026-02-18', title: 'Band Calçados Boutique - Parcela 4/8', value: 229.00, paid: false }
+          );
+
+          localStorage.setItem(migKeyPF2, '1');
+          save(false);
+        }
+
         if (ENABLE_DEMO_DATA) seed();
         render();
       }
