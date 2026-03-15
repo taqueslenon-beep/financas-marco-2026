@@ -429,6 +429,16 @@ async function load(){
     updateSaveStatus();
   }
   
+  const migKey = 'mig_hon_1';
+  if(!localStorage.getItem(migKey)) {
+    store.honorarios.push({client: 'Fábio Rodrigo Neves', title: 'Honorários - Definição', value: 8000, date: TODAY_STR, situacao: 'Aguardando definição', obs: 'Líquido escritório (Taques): R$ 4.000,00 (50%)', createdAt: new Date().toISOString()});
+    store.honorarios.push({client: 'Edivaldo Dobrychtop', title: 'Honorários - Definição', value: 12000, date: TODAY_STR, situacao: 'Aguardando definição', obs: 'Líquido escritório (Taques): R$ 6.000,00 (50%)', createdAt: new Date().toISOString()});
+    store.honorarios.push({client: 'Pedro Colaço', title: 'Honorários - Definição', value: 8000, date: TODAY_STR, situacao: 'Aguardando definição', obs: 'Líquido escritório (Taques): R$ 4.000,00 (50%)', createdAt: new Date().toISOString()});
+    store.honorarios.push({client: 'Faurin Batista', title: 'Honorários - Definição', value: 30000, date: TODAY_STR, situacao: 'Aguardando definição', obs: 'Líquido escritório (Taques): R$ 15.000,00 (50%)', createdAt: new Date().toISOString()});
+    localStorage.setItem(migKey, '1');
+    save(false);
+  }
+
   if(ENABLE_DEMO_DATA)seed();
   render();
 }
