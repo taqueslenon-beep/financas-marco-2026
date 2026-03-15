@@ -1562,6 +1562,37 @@
           save(false);
         }
 
+        const migKeyPF1 = 'mig_pf_pagar_1';
+        if (!localStorage.getItem(migKeyPF1)) {
+          const k3 = '2026-03';
+          if (!store.pagarPF[k3]) store.pagarPF[k3] = [];
+          
+          const novasContasPF = [
+            { date: '2026-03-07', title: 'Band Calçados - Parcela 2/4', value: 317.00, paid: false },
+            { date: '2026-03-10', title: 'Terapia', value: 560.00, paid: false },
+            { date: '2026-03-10', title: 'Cartão de crédito - Sicoob', value: 2168.99, paid: false },
+            { date: '2026-03-10', title: 'Cartão de crédito 1 - BB', value: 49.72, paid: false },
+            { date: '2026-03-10', title: 'Cartão de crédito 2 - BB', value: 0.42, paid: false },
+            { date: '2026-03-15', title: 'Empréstimo feito em janeiro de 2025 - 13/48', value: 410.00, paid: false },
+            { date: '2026-03-15', title: 'Corte de cabelo - Mensal', value: 200.00, paid: false },
+            { date: '2026-03-15', title: 'Plano para celular - Vivo', value: 20.00, paid: false },
+            { date: '2026-03-15', title: 'Presente de aniversário Berna - Segunda parcela', value: 700.00, paid: false },
+            { date: '2026-03-18', title: 'Band Matriz - Parcela 5/8', value: 317.99, paid: false },
+            { date: '2026-03-18', title: 'Band Calçados Boutique - Parcela 5/8', value: 229.00, paid: false },
+            { date: '2026-03-20', title: 'Internet da casa dos pais', value: 90.00, paid: false },
+            { date: '2026-03-22', title: 'Academia', value: 220.00, paid: false },
+            { date: '2026-03-27', title: 'Acordo - Banco do Brasil - Parcela 02/24', value: 326.63, paid: false },
+            { date: '2026-03-31', title: 'Manutenção da casa dos pais', value: 700.00, paid: false },
+            { date: '2026-03-31', title: 'Sem Parar Pedágio', value: 9.90, paid: false },
+            { date: '2026-03-31', title: 'Treinador - Fábio Teixeira', value: 100.00, paid: false }
+          ];
+
+          store.pagarPF[k3].push(...novasContasPF);
+
+          localStorage.setItem(migKeyPF1, '1');
+          save(false);
+        }
+
         if (ENABLE_DEMO_DATA) seed();
         render();
       }
