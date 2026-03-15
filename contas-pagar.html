@@ -19,6 +19,9 @@
   .sidebar-badge { background: #ef4444; color: #fff; font-size: 0.65rem; font-weight: 700; padding: 1px 7px; border-radius: 10px; margin-left: auto; }
   .sidebar-badge.yellow { background: #f59e0b; }
   .sidebar-spacer { flex: 1; }
+  .sidebar-tools { padding: 10px 16px 18px; border-top: 1px solid #334155; }
+  .btn-sidebar { width: 100%; justify-content: center; margin-bottom: 8px; }
+  .save-status { font-size: 0.72rem; color: #cbd5e1; line-height: 1.4; }
 
   /* ── Main ── */
   .main { margin-left: 240px; flex: 1; padding: 24px 28px; min-height: 100vh; }
@@ -69,11 +72,13 @@
   .vencidas-table thead { background: #991b1b; }
   .honorarios-table thead { background: #92400e; }
   th { padding: 12px 14px; text-align: left; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  th.col-check { text-align: center; width: 56px; }
   th.col-value { text-align: right; }
   th.col-status { text-align: center; }
   th.col-days { text-align: center; }
   th.col-actions { text-align: center; width: 100px; }
   td { padding: 11px 14px; border-bottom: 1px solid #eee; font-size: 0.88rem; }
+  td.col-check { text-align: center; }
   td.col-value { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
   td.col-status { text-align: center; }
   td.col-days { text-align: center; font-weight: 700; }
@@ -87,10 +92,12 @@
   tr.row-received td:nth-child(2) { text-decoration: line-through; color: #999; }
   .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.73rem; font-weight: 600; cursor: pointer; user-select: none; }
   .badge.pago { background: #d1fae5; color: #065f46; }
-  .badge.pendente { background: #fef3c7; color: #92400e; }
+  .badge.pendente { background: #fee2e2; color: #991b1b; }
   .badge.recebido { background: #dbeafe; color: #1e40af; }
   .badge.vencido { background: #fee2e2; color: #991b1b; }
   .badge:hover { transform: scale(1.05); }
+  .check-toggle { width: 18px; height: 18px; cursor: pointer; accent-color: #059669; }
+  .check-toggle.pending { accent-color: #dc2626; }
   tfoot td { font-weight: 700; background: #f8f9fa; font-size: 1rem; border-top: 2px solid #4a5568; }
   .receber-table tfoot td { border-top-color: #1e40af; }
   .vencidas-table tfoot td { border-top-color: #991b1b; }
@@ -166,6 +173,13 @@
     <span class="icon">&#128203;</span> Hon. a Definir <span class="sidebar-badge yellow" id="badge-honorarios">0</span>
   </div>
   <div class="sidebar-spacer"></div>
+  <div class="sidebar-section">Seguranca</div>
+  <div class="sidebar-tools">
+    <button class="btn btn-green btn-sidebar" onclick="exportBackup()">Exportar Backup</button>
+    <button class="btn btn-primary btn-sidebar" onclick="document.getElementById('backup-file').click()">Restaurar Backup</button>
+    <div class="save-status" id="save-status">Dados locais ativos.</div>
+    <input type="file" id="backup-file" accept="application/json" style="display:none" onchange="importBackup(event)">
+  </div>
 </aside>
 
 <div class="main">
@@ -181,9 +195,9 @@
       <div class="card"><div class="label">Mais Antiga</div><div class="value" id="sv-oldest" style="font-size:1.1rem"></div></div>
     </div>
     <table class="vencidas-table">
-      <thead><tr><th>Vencimento</th><th>Titulo da Conta</th><th class="col-days">Dias</th><th class="col-value">Valor (R$)</th><th class="col-status">Acao</th></tr></thead>
+      <thead><tr><th class="col-check">Check</th><th>Vencimento</th><th>Titulo da Conta</th><th class="col-days">Dias</th><th class="col-value">Valor (R$)</th><th class="col-status">Acao</th></tr></thead>
       <tbody id="tbody-vencidas"></tbody>
-      <tfoot id="tfoot-vencidas"><tr><td colspan="3">Total Vencido</td><td class="col-value" id="foot-vencidas"></td><td></td></tr></tfoot>
+      <tfoot id="tfoot-vencidas"><tr><td colspan="4">Total Vencido</td><td class="col-value" id="foot-vencidas"></td><td></td></tr></tfoot>
     </table>
   </div>
 
@@ -207,9 +221,9 @@
       <div class="card"><div class="label">Itens</div><div class="value" id="sp-count"></div></div>
     </div>
     <table>
-      <thead><tr><th>Data</th><th>Titulo da Conta</th><th class="col-value">Valor (R$)</th><th class="col-status">Status</th></tr></thead>
+      <thead><tr><th class="col-check">Check</th><th>Data</th><th>Titulo da Conta</th><th class="col-value">Valor (R$)</th><th class="col-status">Status</th></tr></thead>
       <tbody id="tbody-pagar"></tbody>
-      <tfoot id="tfoot-pagar"><tr><td colspan="2">Total Geral</td><td class="col-value" id="foot-pagar"></td><td></td></tr></tfoot>
+      <tfoot id="tfoot-pagar"><tr><td colspan="3">Total Geral</td><td class="col-value" id="foot-pagar"></td><td></td></tr></tfoot>
     </table>
   </div>
 
@@ -234,9 +248,9 @@
       <div class="card"><div class="label">Itens</div><div class="value" id="sr-count"></div></div>
     </div>
     <table class="receber-table">
-      <thead><tr><th>Data</th><th>Titulo / Cliente</th><th class="col-value">Valor (R$)</th><th class="col-status">Status</th></tr></thead>
+      <thead><tr><th class="col-check">Check</th><th>Data</th><th>Titulo / Cliente</th><th class="col-value">Valor (R$)</th><th class="col-status">Status</th></tr></thead>
       <tbody id="tbody-receber"></tbody>
-      <tfoot id="tfoot-receber"><tr><td colspan="2">Total Geral</td><td class="col-value" id="foot-receber"></td><td></td></tr></tfoot>
+      <tfoot id="tfoot-receber"><tr><td colspan="3">Total Geral</td><td class="col-value" id="foot-receber"></td><td></td></tr></tfoot>
     </table>
   </div>
 
@@ -325,6 +339,12 @@
 
 <script>
 const MONTHS=['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const STORAGE_KEY='fin-data-v5';
+const LEGACY_STORAGE_KEY='fin-data-v4';
+const BACKUP_KEY='fin-data-v5-backups';
+const META_KEY='fin-data-v5-meta';
+const MAX_BACKUPS=20;
+const ENABLE_DEMO_DATA=new URLSearchParams(location.search).get('demo')==='1';
 const MIN_Y=2016,MIN_M=0,MAX_Y=2030,MAX_M=11;
 const TODAY=new Date(); TODAY.setHours(0,0,0,0);
 const TODAY_STR=TODAY.getFullYear()+'-'+String(TODAY.getMonth()+1).padStart(2,'0')+'-'+String(TODAY.getDate()).padStart(2,'0');
@@ -338,15 +358,68 @@ function mkey(y,m){return y+'-'+String(m+1).padStart(2,'0')}
 function fmt(v){return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function fmtDate(d){const p=d.split('-');return p[2]+'/'+p[1]}
 function fmtDateFull(d){const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
+function fmtDateTime(d){const x=new Date(d);return x.toLocaleString('pt-BR')}
 function parseVal(s){return parseFloat(s.replace(/\./g,'').replace(',','.'))}
 function daysDiff(d){const dt=new Date(d+'T12:00:00');const diff=TODAY-dt;return Math.floor(diff/86400000)}
 
-function load(){try{const r=localStorage.getItem('fin-data-v4');if(r)store=JSON.parse(r)}catch(e){}
-  if(!store.pagar)store.pagar={};if(!store.receber)store.receber={};if(!store.honorarios)store.honorarios=[];}
-function save(){localStorage.setItem('fin-data-v4',JSON.stringify(store))}
+function defaultStore(){return {pagar:{},receber:{},honorarios:[]}}
+function ensureStoreShape(data){
+  const safe=data&&typeof data==='object'?data:{};
+  return {
+    pagar:safe.pagar&&typeof safe.pagar==='object'?safe.pagar:{},
+    receber:safe.receber&&typeof safe.receber==='object'?safe.receber:{},
+    honorarios:Array.isArray(safe.honorarios)?safe.honorarios:[]
+  };
+}
+function getBackupCount(){try{return JSON.parse(localStorage.getItem(BACKUP_KEY)||'[]').length}catch(e){return 0}}
+function updateSaveStatus(savedAt){
+  const el=document.getElementById('save-status'); if(!el)return;
+  let txt='Dados locais ativos.';
+  if(savedAt)txt='Ultimo salvamento: '+fmtDateTime(savedAt)+'.';
+  else{
+    try{
+      const meta=JSON.parse(localStorage.getItem(META_KEY)||'null');
+      if(meta&&meta.lastSavedAt)txt='Ultimo salvamento: '+fmtDateTime(meta.lastSavedAt)+'.';
+    }catch(e){}
+  }
+  el.textContent=txt+' Backups locais: '+getBackupCount()+'.';
+}
+function saveBackupSnapshot(savedAt){
+  try{
+    const backups=JSON.parse(localStorage.getItem(BACKUP_KEY)||'[]');
+    backups.unshift({savedAt:savedAt,data:store});
+    localStorage.setItem(BACKUP_KEY,JSON.stringify(backups.slice(0,MAX_BACKUPS)));
+  }catch(e){}
+}
+function load(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY)||localStorage.getItem(LEGACY_STORAGE_KEY);
+    store=raw?ensureStoreShape(JSON.parse(raw)):defaultStore();
+    if(raw&&!localStorage.getItem(STORAGE_KEY))save(false);
+  }catch(e){
+    store=defaultStore();
+    alert('Nao foi possivel ler os dados salvos no navegador.');
+  }
+  updateSaveStatus();
+}
+function save(showAlert=true){
+  try{
+    store=ensureStoreShape(store);
+    const savedAt=new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(store));
+    localStorage.setItem(META_KEY,JSON.stringify({lastSavedAt:savedAt}));
+    saveBackupSnapshot(savedAt);
+    updateSaveStatus(savedAt);
+    return true;
+  }catch(e){
+    updateSaveStatus();
+    if(showAlert)alert('Falha ao salvar. Exporte um backup antes de continuar.');
+    return false;
+  }
+}
 function getList(mod){const v=view[mod];const k=mkey(v.y,v.m);if(!store[mod][k])store[mod][k]=[];return store[mod][k]}
 
-// ── Seed ──
+// ── Seed demo (somente com ?demo=1) ──
 function seed(){
   if(!store.pagar['2026-03']||!store.pagar['2026-03'].length){
     store.pagar['2026-03']=[
@@ -384,6 +457,40 @@ function seed(){
     localStorage.setItem(sk,'1');
   }
   save();
+}
+
+function exportBackup(){
+  const payload={version:1,exportedAt:new Date().toISOString(),data:store};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  a.href=url;
+  a.download='financeiro-backup-'+stamp+'.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importBackup(event){
+  const file=event.target.files&&event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const parsed=JSON.parse(ev.target.result);
+      const nextStore=ensureStoreShape(parsed&&parsed.data?parsed.data:parsed);
+      if(!confirm('Restaurar este backup e substituir os dados atuais do navegador?'))return;
+      store=nextStore;
+      if(save())render();
+    }catch(e){
+      alert('Arquivo de backup invalido.');
+    }finally{
+      event.target.value='';
+    }
+  };
+  reader.readAsText(file);
 }
 
 // ── Vencidas: scan ALL pagar data ──
@@ -428,7 +535,7 @@ function renderVencidas(){
   document.getElementById('badge-vencidas').textContent=list.length;
   document.getElementById('badge-vencidas').style.display=list.length?'':'none';
   if(!list.length){
-    tbody.innerHTML='<tr><td colspan="5" class="empty-msg">Nenhuma conta vencida. Tudo em dia!</td></tr>';
+    tbody.innerHTML='<tr><td colspan="6" class="empty-msg">Nenhuma conta vencida. Tudo em dia!</td></tr>';
     document.getElementById('tfoot-vencidas').style.display='none';
     document.getElementById('sv-total').textContent='R$ 0,00';
     document.getElementById('sv-count').textContent='0';
@@ -438,7 +545,7 @@ function renderVencidas(){
     list.forEach(c=>{
       const tr=document.createElement('tr');
       const autoTag=c.auto?'<span class="tag tag-auto">auto</span>':'';
-      tr.innerHTML=`<td>${fmtDateFull(c.date)}</td><td>${c.title}${autoTag}</td><td class="col-days danger">${c._days}d</td><td class="col-value">${fmt(c.value)}</td><td class="col-status"><span class="badge pago" onclick="markVencidaPaid('${c._monthKey}',${c._idx})">Pagar</span></td>`;
+      tr.innerHTML=`<td class="col-check"><input class="check-toggle pending" type="checkbox" onclick="markVencidaPaid('${c._monthKey}',${c._idx})"></td><td>${fmtDateFull(c.date)}</td><td>${c.title}${autoTag}</td><td class="col-days danger">${c._days}d</td><td class="col-value">${fmt(c.value)}</td><td class="col-status"><span class="badge pendente" onclick="markVencidaPaid('${c._monthKey}',${c._idx})">Pendente</span></td>`;
       tbody.appendChild(tr);
     });
     const total=list.reduce((s,c)=>s+c.value,0);
@@ -455,11 +562,11 @@ function renderPagar(){
   updateMonthNav('pagar');const list=getList('pagar');
   const pend=list.filter(c=>!c.paid),done=list.filter(c=>c.paid),sorted=[...pend,...done];
   const tbody=document.getElementById('tbody-pagar');tbody.innerHTML='';
-  if(!sorted.length){tbody.innerHTML='<tr><td colspan="4" class="empty-msg">Nenhuma conta a pagar neste mes.</td></tr>';document.getElementById('tfoot-pagar').style.display='none'}
+  if(!sorted.length){tbody.innerHTML='<tr><td colspan="5" class="empty-msg">Nenhuma conta a pagar neste mes.</td></tr>';document.getElementById('tfoot-pagar').style.display='none'}
   else{document.getElementById('tfoot-pagar').style.display='';
     sorted.forEach(c=>{const idx=list.indexOf(c);const tr=document.createElement('tr');
       if(c.paid)tr.className='row-paid';const at=c.auto?'<span class="tag tag-auto">auto</span>':'';
-      tr.innerHTML=`<td>${fmtDate(c.date)}</td><td>${c.title}${at}</td><td class="col-value">${fmt(c.value)}</td><td class="col-status"><span class="badge ${c.paid?'pago':'pendente'}" onclick="toggle('pagar',${idx})">${c.paid?'Pago':'Pendente'}</span></td>`;
+      tr.innerHTML=`<td class="col-check"><input class="check-toggle ${c.paid?'':'pending'}" type="checkbox" ${c.paid?'checked':''} onclick="toggle('pagar',${idx})"></td><td>${fmtDate(c.date)}</td><td>${c.title}${at}</td><td class="col-value">${fmt(c.value)}</td><td class="col-status"><span class="badge ${c.paid?'pago':'pendente'}" onclick="toggle('pagar',${idx})">${c.paid?'Pago':'Pendente'}</span></td>`;
       tbody.appendChild(tr)});}
   const total=list.reduce((s,c)=>s+c.value,0),ps=done.reduce((s,c)=>s+c.value,0);
   document.getElementById('sp-total').textContent='R$ '+fmt(total);
@@ -473,14 +580,14 @@ function renderReceber(){
   updateMonthNav('receber');const list=getList('receber');
   const pend=list.filter(c=>!c.paid),done=list.filter(c=>c.paid),sorted=[...pend,...done];
   const tbody=document.getElementById('tbody-receber');tbody.innerHTML='';
-  if(!sorted.length){tbody.innerHTML='<tr><td colspan="4" class="empty-msg">Nenhuma conta a receber neste mes.</td></tr>';document.getElementById('tfoot-receber').style.display='none'}
+  if(!sorted.length){tbody.innerHTML='<tr><td colspan="5" class="empty-msg">Nenhuma conta a receber neste mes.</td></tr>';document.getElementById('tfoot-receber').style.display='none'}
   else{document.getElementById('tfoot-receber').style.display='';
     sorted.forEach(c=>{const idx=list.indexOf(c);const tr=document.createElement('tr');
       if(c.paid)tr.className='row-received';const lbl=c.paid?'Recebido':'Pendente';const cls=c.paid?'recebido':'pendente';
       let sub='<span class="detail-sub">'+c.client;
       if(c.dist&&c.dist.length){sub+=' &mdash; ';sub+=c.dist.map(d=>d.name+': R$ '+fmt(d.value)).join(' | ')}
       sub+='</span>';const ct=c.type==='complexa'?'<span class="tag tag-parceiro">contrato</span>':'';
-      tr.innerHTML=`<td>${fmtDate(c.date)}</td><td>${c.title}${ct}${sub}</td><td class="col-value">${fmt(c.value)}</td><td class="col-status"><span class="badge ${cls}" onclick="toggle('receber',${idx})">${lbl}</span></td>`;
+      tr.innerHTML=`<td class="col-check"><input class="check-toggle ${c.paid?'':'pending'}" type="checkbox" ${c.paid?'checked':''} onclick="toggle('receber',${idx})"></td><td>${fmtDate(c.date)}</td><td>${c.title}${ct}${sub}</td><td class="col-value">${fmt(c.value)}</td><td class="col-status"><span class="badge ${cls}" onclick="toggle('receber',${idx})">${lbl}</span></td>`;
       tbody.appendChild(tr)});}
   const total=list.reduce((s,c)=>s+c.value,0),rs=done.reduce((s,c)=>s+c.value,0);
   document.getElementById('sr-total').textContent='R$ '+fmt(total);
@@ -600,7 +707,7 @@ document.addEventListener('keydown',function(e){if(document.querySelector('.over
   if(e.key==='ArrowLeft'&&(curPage==='pagar'||curPage==='receber'))changeMonth(curPage,-1);
   if(e.key==='ArrowRight'&&(curPage==='pagar'||curPage==='receber'))changeMonth(curPage,1)});
 
-load();seed();render();
+load();if(ENABLE_DEMO_DATA)seed();render();
 </script>
 </body>
 </html>
