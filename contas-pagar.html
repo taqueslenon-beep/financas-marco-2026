@@ -1408,6 +1408,86 @@
           save(false);
         }
 
+        const migKeySchmid = 'mig_hon_schmid_8';
+        if(!localStorage.getItem(migKeySchmid)) {
+          const k3 = '2026-03';
+          const k4 = '2026-04';
+          const k5 = '2026-05';
+          const cid = 'schmidmeier-contract';
+          
+          if(!store.receber[k3]) store.receber[k3] = [];
+          store.receber[k3].push({
+            date: '2026-03-25',
+            title: 'Honorários - Schmidmeier (8/10)',
+            value: 30000,
+            paid: false,
+            client: 'Schmidmeier',
+            type: 'complexa',
+            forma: 'Boleto',
+            contractId: cid,
+            dist: [{name: 'DF', value: 15000, type: 'repasse'}]
+          });
+
+          if(!store.receber[k4]) store.receber[k4] = [];
+          store.receber[k4].push({
+            date: '2026-04-25',
+            title: 'Honorários - Schmidmeier (9/10)',
+            value: 30000,
+            paid: false,
+            client: 'Schmidmeier',
+            type: 'complexa',
+            forma: 'Boleto',
+            contractId: cid,
+            dist: [{name: 'DF', value: 15000, type: 'repasse'}]
+          });
+
+          if(!store.receber[k5]) store.receber[k5] = [];
+          store.receber[k5].push({
+            date: '2026-05-25',
+            title: 'Honorários - Schmidmeier (10/10)',
+            value: 30000,
+            paid: false,
+            client: 'Schmidmeier',
+            type: 'complexa',
+            forma: 'Boleto',
+            contractId: cid,
+            dist: [{name: 'DF', value: 15000, type: 'repasse'}]
+          });
+
+          if(!store.pagar[k3]) store.pagar[k3] = [];
+          store.pagar[k3].push({
+            date: '2026-03-25',
+            title: 'Repasse DF - Schmidmeier (8/10)',
+            value: 15000,
+            paid: false,
+            auto: true,
+            contractId: cid
+          });
+
+          if(!store.pagar[k4]) store.pagar[k4] = [];
+          store.pagar[k4].push({
+            date: '2026-04-25',
+            title: 'Repasse DF - Schmidmeier (9/10)',
+            value: 15000,
+            paid: false,
+            auto: true,
+            contractId: cid
+          });
+
+          if(!store.pagar[k5]) store.pagar[k5] = [];
+          store.pagar[k5].push({
+            date: '2026-05-25',
+            title: 'Repasse DF - Schmidmeier (10/10)',
+            value: 15000,
+            paid: false,
+            auto: true,
+            contractId: cid
+          });
+
+          localStorage.setItem(migKeySchmid, '1');
+          save(false);
+        }
+
         if (ENABLE_DEMO_DATA) seed();
         render();
       }
@@ -2122,6 +2202,13 @@
             sx = " (" + (i + 1) + "/" + np + ")";
           const pv =
             i === np - 1 ? Math.round((tv - vp * (np - 1)) * 100) / 100 : vp;
+          
+          // Corrige o rateio para calcular por parcela
+          const parcelaDp = dp.map(d => ({
+            ...d,
+            value: Math.round((d.value / np) * 100) / 100
+          }));
+
           if (!store.receber[k]) store.receber[k] = [];
           store.receber[k].push({
             date: ds,
@@ -2133,10 +2220,10 @@
             forma: fo,
             obs: ob,
             contractId: cid,
-            dist: dp.map((d) => ({ ...d })),
+            dist: parcelaDp,
           });
           if (!store.pagar[k]) store.pagar[k] = [];
-          dp.forEach((d) => {
+          parcelaDp.forEach((d) => {
             store.pagar[k].push({
               date: ds,
               title: "Repasse " + d.name + " - " + cl + sx,
