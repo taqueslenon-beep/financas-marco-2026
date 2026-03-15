@@ -1,807 +1,2267 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestao Financeira</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; display: flex; min-height: 100vh; }
-
-  /* ── Sidebar ── */
-  .sidebar { width: 240px; background: #1e293b; color: #fff; padding: 24px 0; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; overflow-y: auto; }
-  .sidebar-logo { padding: 0 20px 24px; font-size: 1.05rem; font-weight: 700; color: #e2e8f0; border-bottom: 1px solid #334155; margin-bottom: 8px; }
-  .sidebar-section { padding: 16px 16px 8px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; }
-  .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 0.86rem; color: #94a3b8; cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
-  .sidebar-item:hover { background: #334155; color: #e2e8f0; }
-  .sidebar-item.active { background: #334155; color: #fff; border-left-color: #3b82f6; font-weight: 600; }
-  .sidebar-item .icon { font-size: 1.05rem; width: 22px; text-align: center; }
-  .sidebar-badge { background: #ef4444; color: #fff; font-size: 0.65rem; font-weight: 700; padding: 1px 7px; border-radius: 10px; margin-left: auto; }
-  .sidebar-badge.yellow { background: #f59e0b; }
-  .sidebar-spacer { flex: 1; }
-  .sidebar-tools { padding: 10px 16px 18px; border-top: 1px solid #334155; }
-  .btn-sidebar { width: 100%; justify-content: center; margin-bottom: 8px; }
-  .save-status { font-size: 0.72rem; color: #cbd5e1; line-height: 1.4; }
-
-  /* ── Main ── */
-  .main { margin-left: 240px; flex: 1; padding: 24px 28px; min-height: 100vh; }
-  .page { display: none; }
-  .page.active { display: block; }
-
-  /* ── Header ── */
-  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-  .page-header h1 { font-size: 1.35rem; color: #2c3e50; }
-  .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  .btn { border: none; padding: 9px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-  .btn-primary { background: #4a5568; color: #fff; }
-  .btn-primary:hover { background: #2d3748; }
-  .btn-green { background: #059669; color: #fff; }
-  .btn-green:hover { background: #047857; }
-  .btn-blue { background: #2563eb; color: #fff; }
-  .btn-blue:hover { background: #1d4ed8; }
-  .btn-amber { background: #d97706; color: #fff; }
-  .btn-amber:hover { background: #b45309; }
-  .btn-red { background: #dc2626; color: #fff; }
-  .btn-red:hover { background: #b91c1c; }
-  .btn-sm { padding: 5px 10px; font-size: 0.75rem; }
-
-  /* ── Month nav ── */
-  .month-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; background: #fff; padding: 10px 16px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .month-nav button { background: #edf2f7; border: none; width: 36px; height: 36px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; color: #4a5568; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-  .month-nav button:hover { background: #e2e8f0; }
-  .month-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
-  .month-label { font-size: 1.05rem; font-weight: 700; color: #2c3e50; min-width: 180px; text-align: center; }
-
-  /* ── Cards ── */
-  .summary { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-  .card { background: #fff; border-radius: 10px; padding: 16px 20px; flex: 1; min-width: 140px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .card .label { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-  .card .value { font-size: 1.4rem; font-weight: 700; margin-top: 4px; }
-  .card .value.total-pagar { color: #e74c3c; }
-  .card .value.total-receber { color: #2563eb; }
-  .card .value.paid { color: #27ae60; }
-  .card .value.pending { color: #f39c12; }
-  .card .value.vencido { color: #dc2626; }
-  .card .value.amber { color: #d97706; }
-  .card.card-danger { border-left: 4px solid #ef4444; }
-
-  /* ── Table ── */
-  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  thead { background: #4a5568; color: #fff; }
-  .receber-table thead { background: #1e40af; }
-  .vencidas-table thead { background: #991b1b; }
-  .honorarios-table thead { background: #92400e; }
-  th { padding: 12px 14px; text-align: left; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-  th.col-check { text-align: center; width: 56px; }
-  th.col-value { text-align: right; }
-  th.col-status { text-align: center; }
-  th.col-days { text-align: center; }
-  th.col-actions { text-align: center; width: 100px; }
-  td { padding: 11px 14px; border-bottom: 1px solid #eee; font-size: 0.88rem; }
-  td.col-check { text-align: center; }
-  td.col-value { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
-  td.col-status { text-align: center; }
-  td.col-days { text-align: center; font-weight: 700; }
-  td.col-days.danger { color: #dc2626; }
-  td.col-actions { text-align: center; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover { background: #f8f9fa; }
-  tr.row-paid { background: #f0fdf4; opacity: 0.7; }
-  tr.row-paid td:nth-child(2) { text-decoration: line-through; color: #999; }
-  tr.row-received { background: #eff6ff; opacity: 0.7; }
-  tr.row-received td:nth-child(2) { text-decoration: line-through; color: #999; }
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.73rem; font-weight: 600; cursor: pointer; user-select: none; }
-  .badge.pago { background: #d1fae5; color: #065f46; }
-  .badge.pendente { background: #fee2e2; color: #991b1b; }
-  .badge.recebido { background: #dbeafe; color: #1e40af; }
-  .badge.vencido { background: #fee2e2; color: #991b1b; }
-  .badge:hover { transform: scale(1.05); }
-  .check-toggle { width: 18px; height: 18px; cursor: pointer; accent-color: #059669; }
-  .check-toggle.pending { accent-color: #dc2626; }
-  tfoot td { font-weight: 700; background: #f8f9fa; font-size: 1rem; border-top: 2px solid #4a5568; }
-  .receber-table tfoot td { border-top-color: #1e40af; }
-  .vencidas-table tfoot td { border-top-color: #991b1b; }
-  .empty-msg { text-align: center; padding: 40px; color: #aaa; font-size: 0.95rem; }
-  .detail-sub { color: #888; font-size: 0.78rem; display: block; margin-top: 2px; }
-  .tag { display: inline-block; padding: 1px 7px; border-radius: 6px; font-size: 0.68rem; font-weight: 600; margin-left: 6px; vertical-align: middle; }
-  .tag-parceiro { background: #fce7f3; color: #9d174d; }
-  .tag-auto { background: #e0e7ff; color: #3730a3; }
-
-  /* Honorarios cards */
-  .hon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-  .hon-card { background: #fff; border-radius: 10px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #d97706; }
-  .hon-card h3 { font-size: 0.95rem; color: #2c3e50; margin-bottom: 4px; }
-  .hon-card .hon-client { font-size: 0.82rem; color: #888; margin-bottom: 10px; }
-  .hon-card .hon-info { font-size: 0.82rem; color: #555; margin-bottom: 4px; }
-  .hon-card .hon-info strong { color: #333; }
-  .hon-card .hon-obs { font-size: 0.78rem; color: #999; margin-top: 8px; font-style: italic; }
-  .hon-card .hon-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #eee; }
-  .hon-date { font-size: 0.72rem; color: #aaa; margin-top: 6px; }
-
-  /* ── Modal ── */
-  .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 100; justify-content: center; align-items: flex-start; padding-top: 40px; overflow-y: auto; }
-  .overlay.active { display: flex; }
-  .modal { background: #fff; border-radius: 12px; padding: 28px; width: 560px; max-width: 94vw; box-shadow: 0 10px 40px rgba(0,0,0,0.2); margin-bottom: 40px; }
-  .modal h2 { font-size: 1.1rem; margin-bottom: 18px; color: #2c3e50; }
-  .modal label { display: block; font-size: 0.8rem; color: #555; margin-bottom: 4px; font-weight: 600; }
-  .modal input, .modal select, .modal textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; margin-bottom: 14px; outline: none; font-family: inherit; }
-  .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: #4a5568; }
-  .modal textarea { resize: vertical; min-height: 50px; }
-  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; }
-  .modal-actions button { padding: 10px 20px; border-radius: 8px; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
-  .btn-cancel { background: #eee; color: #555; }
-  .btn-cancel:hover { background: #ddd; }
-  .btn-save { background: #4a5568; color: #fff; }
-  .btn-save:hover { background: #2d3748; }
-  .btn-save-blue { background: #2563eb; color: #fff; }
-  .btn-save-blue:hover { background: #1d4ed8; }
-  .btn-save-amber { background: #d97706; color: #fff; }
-  .btn-save-amber:hover { background: #b45309; }
-  .form-row { display: flex; gap: 12px; }
-  .form-row > div { flex: 1; }
-  .section-title { font-size: 0.82rem; font-weight: 700; color: #2c3e50; margin: 8px 0 12px; padding-top: 12px; border-top: 1px solid #eee; }
-  .dist-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-  .dist-row input { margin-bottom: 0; }
-  .dist-row .dist-name { flex: 2; }
-  .dist-row .dist-val { flex: 1; }
-  .dist-row .dist-remove { background: #fee2e2; color: #dc2626; border: none; width: 32px; height: 38px; border-radius: 8px; cursor: pointer; font-size: 1rem; flex-shrink: 0; }
-  .dist-row .dist-remove:hover { background: #fecaca; }
-  .btn-add-dist { background: none; border: 1px dashed #cbd5e1; color: #64748b; padding: 8px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; width: 100%; margin-bottom: 14px; }
-  .btn-add-dist:hover { border-color: #94a3b8; color: #475569; }
-  .dist-summary { background: #f8fafc; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.82rem; }
-  .dist-summary .line { display: flex; justify-content: space-between; margin-bottom: 3px; }
-  .dist-summary .line.total { font-weight: 700; border-top: 1px solid #e2e8f0; padding-top: 6px; margin-top: 4px; }
-  .dist-summary .line.ok { color: #059669; }
-  .dist-summary .line.warn { color: #dc2626; }
-</style>
-</head>
-<body>
-
-<aside class="sidebar">
-  <div class="sidebar-logo">Gestao Financeira</div>
-  <div class="sidebar-section">Modulos</div>
-  <div class="sidebar-item" onclick="switchPage('vencidas')" id="nav-vencidas">
-    <span class="icon">&#9888;</span> Contas Vencidas <span class="sidebar-badge" id="badge-vencidas">0</span>
-  </div>
-  <div class="sidebar-item active" onclick="switchPage('pagar')" id="nav-pagar">
-    <span class="icon">&#128228;</span> Contas a Pagar
-  </div>
-  <div class="sidebar-item" onclick="switchPage('receber')" id="nav-receber">
-    <span class="icon">&#128229;</span> Contas a Receber
-  </div>
-  <div class="sidebar-item" onclick="switchPage('honorarios')" id="nav-honorarios">
-    <span class="icon">&#128203;</span> Hon. a Definir <span class="sidebar-badge yellow" id="badge-honorarios">0</span>
-  </div>
-  <div class="sidebar-spacer"></div>
-  <div class="sidebar-section">Seguranca (Firebase)</div>
-  <div class="sidebar-tools">
-    <button class="btn btn-green btn-sidebar" onclick="exportBackup()">Exportar Backup</button>
-    <button class="btn btn-primary btn-sidebar" onclick="document.getElementById('backup-file').click()">Restaurar Backup</button>
-    <div class="save-status" id="save-status">Conectando...</div>
-    <input type="file" id="backup-file" accept="application/json" style="display:none" onchange="importBackup(event)">
-  </div>
-</aside>
-
-<div class="main">
-
-  <!-- ═══ PAGE: VENCIDAS ═══ -->
-  <div class="page" id="page-vencidas">
-    <div class="page-header">
-      <h1 style="color:#dc2626">Contas a Pagar Vencidas</h1>
-    </div>
-    <div class="summary">
-      <div class="card card-danger"><div class="label">Total Vencido</div><div class="value vencido" id="sv-total"></div></div>
-      <div class="card"><div class="label">Itens Vencidos</div><div class="value vencido" id="sv-count"></div></div>
-      <div class="card"><div class="label">Mais Antiga</div><div class="value" id="sv-oldest" style="font-size:1.1rem"></div></div>
-    </div>
-    <table class="vencidas-table">
-      <thead><tr><th class="col-check">Check</th><th>Vencimento</th><th>Titulo da Conta</th><th class="col-days">Dias</th><th class="col-value">Valor (R$)</th><th class="col-status">Acao</th></tr></thead>
-      <tbody id="tbody-vencidas"></tbody>
-      <tfoot id="tfoot-vencidas"><tr><td colspan="4">Total Vencido</td><td class="col-value" id="foot-vencidas"></td><td></td></tr></tfoot>
-    </table>
-  </div>
-
-  <!-- ═══ PAGE: CONTAS A PAGAR ═══ -->
-  <div class="page active" id="page-pagar">
-    <div class="page-header">
-      <h1>Contas a Pagar</h1>
-      <div class="header-actions">
-        <button class="btn btn-primary" onclick="openModalPagar()">+ Nova Conta a Pagar</button>
-      </div>
-    </div>
-    <div class="month-nav">
-      <button id="btn-prev-p" onclick="changeMonth('pagar',-1)">&#8592;</button>
-      <div class="month-label" id="month-label-p"></div>
-      <button id="btn-next-p" onclick="changeMonth('pagar',1)">&#8594;</button>
-    </div>
-    <div class="summary">
-      <div class="card"><div class="label">Total</div><div class="value total-pagar" id="sp-total"></div></div>
-      <div class="card"><div class="label">Pago</div><div class="value paid" id="sp-paid"></div></div>
-      <div class="card"><div class="label">Pendente</div><div class="value pending" id="sp-pending"></div></div>
-      <div class="card"><div class="label">Itens</div><div class="value" id="sp-count"></div></div>
-    </div>
-    <table>
-      <thead><tr><th class="col-check">Check</th><th>Data</th><th>Titulo da Conta</th><th class="col-value">Valor (R$)</th><th class="col-status">Status</th></tr></thead>
-      <tbody id="tbody-pagar"></tbody>
-      <tfoot id="tfoot-pagar"><tr><td colspan="3">Total Geral</td><td class="col-value" id="foot-pagar"></td><td></td></tr></tfoot>
-    </table>
-  </div>
-
-  <!-- ═══ PAGE: CONTAS A RECEBER ═══ -->
-  <div class="page" id="page-receber">
-    <div class="page-header">
-      <h1>Contas a Receber</h1>
-      <div class="header-actions">
-        <button class="btn btn-green" onclick="openModalReceber('simples')">+ Conta Simples</button>
-        <button class="btn btn-blue" onclick="openModalReceber('complexa')">+ Conta Complexa</button>
-      </div>
-    </div>
-    <div class="month-nav">
-      <button id="btn-prev-r" onclick="changeMonth('receber',-1)">&#8592;</button>
-      <div class="month-label" id="month-label-r"></div>
-      <button id="btn-next-r" onclick="changeMonth('receber',1)">&#8594;</button>
-    </div>
-    <div class="summary">
-      <div class="card"><div class="label">Total</div><div class="value total-receber" id="sr-total"></div></div>
-      <div class="card"><div class="label">Recebido</div><div class="value paid" id="sr-received"></div></div>
-      <div class="card"><div class="label">Pendente</div><div class="value pending" id="sr-pending"></div></div>
-      <div class="card"><div class="label">Itens</div><div class="value" id="sr-count"></div></div>
-    </div>
-    <table class="receber-table">
-      <thead><tr><th class="col-check">Check</th><th>Data</th><th>Titulo / Cliente</th><th class="col-value">Valor (R$)</th><th class="col-status">Status</th></tr></thead>
-      <tbody id="tbody-receber"></tbody>
-      <tfoot id="tfoot-receber"><tr><td colspan="3">Total Geral</td><td class="col-value" id="foot-receber"></td><td></td></tr></tfoot>
-    </table>
-  </div>
-
-  <!-- ═══ PAGE: HONORARIOS A DEFINIR ═══ -->
-  <div class="page" id="page-honorarios">
-    <div class="page-header">
-      <h1 style="color:#92400e">Honorarios a Definir</h1>
-      <div class="header-actions">
-        <button class="btn btn-amber" onclick="openModalHonorario()">+ Novo Honorario</button>
-      </div>
-    </div>
-    <div class="summary">
-      <div class="card"><div class="label">Valor Estimado Total</div><div class="value amber" id="sh-total"></div></div>
-      <div class="card"><div class="label">Valor Estimado Taques</div><div class="value amber" id="sh-taques"></div></div>
-      <div class="card"><div class="label">Contratos Pendentes</div><div class="value amber" id="sh-count"></div></div>
-    </div>
-    <table class="honorarios-table" id="hon-table-container">
-      <thead><tr><th>Data</th><th>Cliente / Descrição</th><th class="col-status">Situação</th><th class="col-value">Valor Total (R$)</th><th class="col-value">Valor Taques (R$)</th><th class="col-actions">Ação</th></tr></thead>
-      <tbody id="tbody-honorarios"></tbody>
-      <tfoot id="tfoot-honorarios"><tr><td colspan="3">Total Geral</td><td class="col-value" id="foot-hon-total"></td><td class="col-value" id="foot-hon-taques"></td><td></td></tr></tfoot>
-    </table>
-    <div id="hon-empty" class="empty-msg" style="display:none;background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">Nenhum honorario pendente de definicao.</div>
-  </div>
-</div>
-
-<!-- Modal: Conta a Pagar -->
-<div class="overlay" id="overlay-pagar" onclick="if(event.target===this)closeModal('pagar')">
-  <div class="modal">
-    <h2>Nova Conta a Pagar</h2>
-    <label>Data</label><input type="date" id="inp-p-date">
-    <label>Titulo da Conta</label><input type="text" id="inp-p-title" placeholder="Ex: Aluguel do escritorio">
-    <label>Valor (R$)</label><input type="text" id="inp-p-value" placeholder="Ex: 1.500,00" inputmode="decimal">
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('pagar')">Cancelar</button>
-      <button class="btn-save" onclick="addContaPagar()">Adicionar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Simples -->
-<div class="overlay" id="overlay-simples" onclick="if(event.target===this)closeModal('simples')">
-  <div class="modal">
-    <h2>Nova Conta a Receber - Simples</h2>
-    <div class="form-row"><div><label>Data</label><input type="date" id="inp-s-date"></div><div><label>Valor (R$)</label><input type="text" id="inp-s-value" placeholder="1.500,00" inputmode="decimal"></div></div>
-    <label>Cliente</label><input type="text" id="inp-s-client" placeholder="Ex: Joao Silva">
-    <label>Descricao</label><input type="text" id="inp-s-title" placeholder="Ex: Honorarios advocaticios">
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('simples')">Cancelar</button>
-      <button class="btn-save-blue" onclick="addSimples()">Adicionar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Complexa -->
-<div class="overlay" id="overlay-complexa" onclick="if(event.target===this)closeModal('complexa')">
-  <div class="modal">
-    <h2>Nova Conta a Receber - Complexa</h2>
-    <div class="section-title">Dados do contrato</div>
-    <label>Cliente</label><input type="text" id="inp-c-client" placeholder="Ex: Vitor Krzewinski">
-    <label>Descricao / Caso</label><input type="text" id="inp-c-title" placeholder="Ex: Honorarios - Acidente de transito">
-    <div class="form-row"><div><label>Valor total (R$)</label><input type="text" id="inp-c-total" placeholder="30.000,00" inputmode="decimal" oninput="calcComplex()"></div><div><label>Parcelas</label><input type="number" id="inp-c-parcelas" min="1" value="15" oninput="calcComplex()"></div></div>
-    <div class="form-row"><div><label>1o vencimento</label><input type="date" id="inp-c-date"></div><div><label>Dia do vencimento</label><input type="number" id="inp-c-dia" min="1" max="31" value="10"></div></div>
-    <div class="form-row"><div><label>Forma de pagamento</label><select id="inp-c-forma"><option value="Boleto">Boleto</option><option value="PIX">PIX</option><option value="Transferencia">Transferencia</option><option value="Cartao">Cartao</option><option value="Dinheiro">Dinheiro</option></select></div><div><label>Valor da parcela</label><input type="text" id="inp-c-vparcela" readonly style="background:#f8fafc;color:#2563eb;font-weight:700"></div></div>
-    <div class="section-title">Distribuicao dos valores (por parcela)</div>
-    <div id="dist-container"></div>
-    <button class="btn-add-dist" onclick="addDistRow()">+ Adicionar repasse</button>
-    <div class="dist-summary" id="dist-summary"></div>
-    <label>Observacoes</label><textarea id="inp-c-obs" placeholder="Detalhes adicionais..."></textarea>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('complexa')">Cancelar</button>
-      <button class="btn-save-blue" onclick="addComplexa()">Lancar Contrato</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Honorario a Definir -->
-<div class="overlay" id="overlay-honorario" onclick="if(event.target===this)closeModal('honorario')">
-  <div class="modal">
-    <h2>Novo Honorario a Definir</h2>
-    <label>Cliente</label><input type="text" id="inp-h-client" placeholder="Ex: Maria da Silva">
-    <label>Caso / Descricao</label><input type="text" id="inp-h-title" placeholder="Ex: Acao trabalhista - Empresa XYZ">
-    <div class="form-row">
-      <div><label>Valor total (R$)</label><input type="text" id="inp-h-value" placeholder="Ex: 15.000,00" inputmode="decimal"></div>
-      <div><label>Valor Taques (R$)</label><input type="text" id="inp-h-taques" placeholder="Ex: 7.500,00" inputmode="decimal"></div>
-    </div>
-    <div class="form-row">
-      <div><label>Data do contrato</label><input type="date" id="inp-h-date"></div>
-      <div><label>Situacao</label><input type="text" id="inp-h-situacao" placeholder="Ex: Aguardando definicao"></div>
-    </div>
-    <label>Observacoes</label><textarea id="inp-h-obs" placeholder="Detalhes adicionais..."></textarea>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('honorario')">Cancelar</button>
-      <button class="btn-save-amber" onclick="addHonorario()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBpX11wOCdIwV26O9w3WwqUjtKkLqJejPo",
-  authDomain: "financas-marco-2026.firebaseapp.com",
-  projectId: "financas-marco-2026",
-  storageBucket: "financas-marco-2026.firebasestorage.app",
-  messagingSenderId: "173551902595",
-  appId: "1:173551902595:web:62a285fe9f1b034c0260b6"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-const MONTHS=['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const STORAGE_KEY='fin-data-v5';
-const LEGACY_STORAGE_KEY='fin-data-v4';
-const BACKUP_KEY='fin-data-v5-backups';
-const META_KEY='fin-data-v5-meta';
-const MAX_BACKUPS=20;
-const ENABLE_DEMO_DATA=new URLSearchParams(location.search).get('demo')==='1';
-const MIN_Y=2016,MIN_M=0,MAX_Y=2030,MAX_M=11;
-const TODAY=new Date(); TODAY.setHours(0,0,0,0);
-const TODAY_STR=TODAY.getFullYear()+'-'+String(TODAY.getMonth()+1).padStart(2,'0')+'-'+String(TODAY.getDate()).padStart(2,'0');
-
-let curPage='pagar';
-let view={pagar:{y:2026,m:2},receber:{y:2026,m:2}};
-let store={pagar:{},receber:{},honorarios:[]};
-let distRows=[];
-
-function mkey(y,m){return y+'-'+String(m+1).padStart(2,'0')}
-function fmt(v){return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
-function fmtDate(d){const p=d.split('-');return p[2]+'/'+p[1]}
-function fmtDateFull(d){const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
-function fmtDateTime(d){const x=new Date(d);return x.toLocaleString('pt-BR')}
-function parseVal(s){return parseFloat(s.replace(/\./g,'').replace(',','.'))}
-function daysDiff(d){const dt=new Date(d+'T12:00:00');const diff=TODAY-dt;return Math.floor(diff/86400000)}
-
-function defaultStore(){return {pagar:{},receber:{},honorarios:[]}}
-function ensureStoreShape(data){
-  const safe=data&&typeof data==='object'?data:{};
-  return {
-    pagar:safe.pagar&&typeof safe.pagar==='object'?safe.pagar:{},
-    receber:safe.receber&&typeof safe.receber==='object'?safe.receber:{},
-    honorarios:Array.isArray(safe.honorarios)?safe.honorarios:[]
-  };
-}
-function getBackupCount(){try{return JSON.parse(localStorage.getItem(BACKUP_KEY)||'[]').length}catch(e){return 0}}
-function updateSaveStatus(savedAt, isCloud = false){
-  const el=document.getElementById('save-status'); if(!el)return;
-  let txt='Dados locais ativos.';
-  if(savedAt){
-    txt = isCloud ? 'Salvo na nuvem: '+fmtDateTime(savedAt) : 'Salvo local: '+fmtDateTime(savedAt);
-  } else {
-    try{
-      const meta=JSON.parse(localStorage.getItem(META_KEY)||'null');
-      if(meta&&meta.lastSavedAt)txt='Ultimo salvamento: '+fmtDateTime(meta.lastSavedAt)+'.';
-    }catch(e){}
-  }
-  el.textContent=txt;
-}
-function saveBackupSnapshot(savedAt){
-  try{
-    const backups=JSON.parse(localStorage.getItem(BACKUP_KEY)||'[]');
-    backups.unshift({savedAt:savedAt,data:store});
-    localStorage.setItem(BACKUP_KEY,JSON.stringify(backups.slice(0,MAX_BACKUPS)));
-  }catch(e){}
-}
-async function load(){
-  try{
-    const docRef = doc(db, 'financeiro', 'store_v5');
-    const docSnap = await getDoc(docRef);
-    if(docSnap.exists()){
-      store = ensureStoreShape(docSnap.data());
-      updateSaveStatus(new Date(), true);
-    } else {
-      // Fallback local
-      const raw=localStorage.getItem(STORAGE_KEY)||localStorage.getItem(LEGACY_STORAGE_KEY);
-      store=raw?ensureStoreShape(JSON.parse(raw)):defaultStore();
-      if(raw) save(false);
-      else updateSaveStatus();
-    }
-  }catch(e){
-    console.error("Firebase load error", e);
-    const raw=localStorage.getItem(STORAGE_KEY)||localStorage.getItem(LEGACY_STORAGE_KEY);
-    store=raw?ensureStoreShape(JSON.parse(raw)):defaultStore();
-    updateSaveStatus();
-  }
-  
-  // Cleanup duplicates
-  const migKey3 = 'mig_hon_dedup';
-  if(!localStorage.getItem(migKey3)) {
-    store.honorarios = store.honorarios.filter(h => !(h.obs && h.obs.includes('Líquido escritório')));
-    localStorage.setItem(migKey3, '1');
-    save(false);
-  }
-
-  if(ENABLE_DEMO_DATA)seed();
-  render();
-}
-async function save(showAlert=true){
-  try{
-    store=ensureStoreShape(store);
-    const savedAt=new Date().toISOString();
-    
-    // Save to Local
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(store));
-    localStorage.setItem(META_KEY,JSON.stringify({lastSavedAt:savedAt}));
-    saveBackupSnapshot(savedAt);
-
-    // Save to Firebase
-    await setDoc(doc(db, 'financeiro', 'store_v5'), store);
-    updateSaveStatus(savedAt, true);
-    
-    return true;
-  }catch(e){
-    console.error("Firebase save error", e);
-    updateSaveStatus(new Date().toISOString(), false);
-    if(showAlert)alert('Aviso: Falha ao salvar na nuvem (Firebase). Os dados foram salvos localmente.');
-    return false;
-  }
-}
-function getList(mod){const v=view[mod];const k=mkey(v.y,v.m);if(!store[mod][k])store[mod][k]=[];return store[mod][k]}
-
-// ── Seed demo (somente com ?demo=1) ──
-function seed(){
-  if(!store.pagar['2026-03']||!store.pagar['2026-03'].length){
-    store.pagar['2026-03']=[
-      {date:'2026-03-03',title:'Placa - Herbst - Parcela 5/6',value:1389.66,paid:false},
-      {date:'2026-03-05',title:'Tarifa bancaria - Sicoob',value:30,paid:false},
-      {date:'2026-03-05',title:'Salario Berna - Administrativo',value:1000,paid:true},
-      {date:'2026-03-05',title:'Salario Berna - Limpeza',value:300,paid:true},
-      {date:'2026-03-10',title:'Anuidade OAB - Lenon',value:60,paid:false},
-      {date:'2026-03-10',title:'Anuidade OAB - Gilberto',value:60,paid:false},
-      {date:'2026-03-10',title:'Fatura do cartao - Sicoob - Lenon - Final 9980',value:4531.97,paid:false},
-      {date:'2026-03-10',title:'Fatura do cartao - Sicoob - Berna - Final 7788',value:1806.26,paid:false},
-      {date:'2026-03-10',title:'Carro - Jetta - Parcela 2/60',value:3186.85,paid:false},
-      {date:'2026-03-15',title:'Aluguel do escritorio - Sala 01',value:950,paid:false},
-      {date:'2026-03-15',title:'Aluguel do escritorio - Sala 02',value:990,paid:false},
-      {date:'2026-03-15',title:'Energia eletrica - Sala 1',value:200,paid:false},
-      {date:'2026-03-15',title:'Energia eletrica - Sala 2',value:50,paid:false},
-      {date:'2026-03-15',title:'Macbook - Parcela 7/10',value:749.99,paid:false},
-      {date:'2026-03-15',title:'Plano de celular Vivo',value:60,paid:false},
-      {date:'2026-03-16',title:'Sofa do escritorio - ML - Parcela 2/10',value:232.89,paid:false},
-      {date:'2026-03-20',title:'Imposto - Simples Nacional (Ref: Fev 2026)',value:3992.74,paid:false},
-      {date:'2026-03-30',title:'Imposto - Simples Nacional - Parcelamento 3/12',value:924.97,paid:false},
-      {date:'2026-03-30',title:'Assessoria de Marketing',value:1700,paid:false},
-      {date:'2026-03-31',title:'Seguro do carro (debita do cartao)',value:364,paid:false}];
-  }
-  const sk='seed-vitor-v4';
-  if(!localStorage.getItem(sk)){
-    const cid='vitor-krzewinski-'+Date.now();
-    for(let i=0;i<15;i++){const mm=3+i;const yr=2026+Math.floor((mm-1)/12);const mo=((mm-1)%12)+1;
-      const ds=yr+'-'+String(mo).padStart(2,'0')+'-10';const k=yr+'-'+String(mo).padStart(2,'0');const sx=' ('+(i+1)+'/15)';
-      if(!store.receber[k])store.receber[k]=[];
-      store.receber[k].push({date:ds,title:'Honorarios - Acidente de transito'+sx,value:2000,paid:false,client:'Vitor Krzewinski',type:'complexa',forma:'Boleto',contractId:cid,dist:[{name:'Paulo Simons',value:1000,type:'repasse'},{name:'Gilberto',value:500,type:'socio'},{name:'Lenon',value:500,type:'socio'}]});
-      if(!store.pagar[k])store.pagar[k]=[];
-      store.pagar[k].push({date:ds,title:'Repasse Paulo Simons - Vitor Krzewinski'+sx,value:1000,paid:false,auto:true,contractId:cid});
-    }
-    localStorage.setItem(sk,'1');
-  }
-  save();
-}
-
-function exportBackup(){
-  const payload={version:1,exportedAt:new Date().toISOString(),data:store};
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
-  a.href=url;
-  a.download='financeiro-backup-'+stamp+'.json';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function importBackup(event){
-  const file=event.target.files&&event.target.files[0];
-  if(!file)return;
-  const reader=new FileReader();
-  reader.onload=function(ev){
-    try{
-      const parsed=JSON.parse(ev.target.result);
-      const nextStore=ensureStoreShape(parsed&&parsed.data?parsed.data:parsed);
-      if(!confirm('Restaurar este backup e substituir os dados atuais na nuvem?'))return;
-      store=nextStore;
-      save(true).then(()=>render());
-    }catch(e){
-      alert('Arquivo de backup invalido.');
-    }finally{
-      event.target.value='';
-    }
-  };
-  reader.readAsText(file);
-}
-
-// ── Vencidas: scan ALL pagar data ──
-function getVencidas(){
-  const result=[];
-  for(const k in store.pagar){
-    store.pagar[k].forEach((c,idx)=>{
-      if(!c.paid && c.date < TODAY_STR){
-        result.push({...c, _monthKey:k, _idx:idx, _days:daysDiff(c.date)});
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestao Financeira</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
-    });
-  }
-  result.sort((a,b)=>a.date.localeCompare(b.date));
-  return result;
-}
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f5f5f5;
+        color: #333;
+        display: flex;
+        min-height: 100vh;
+      }
 
-// ── Navigation ──
-function switchPage(pg){
-  curPage=pg;
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+pg).classList.add('active');
-  document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
-  document.getElementById('nav-'+pg).classList.add('active');
-  render();
-}
+      /* ── Sidebar ── */
+      .sidebar {
+        width: 240px;
+        background: #223631;
+        color: #fff;
+        padding: 24px 0;
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 50;
+        overflow-y: auto;
+      }
+      .sidebar-logo {
+        padding: 0 20px 24px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #EAE0D5;
+        border-bottom: 1px solid #1a2925;
+        margin-bottom: 8px;
+      }
+      .sidebar-section {
+        padding: 16px 16px 8px;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #D6CCC1;
+      }
+      .sidebar-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 20px;
+        font-size: 0.86rem;
+        color: #EAE0D5;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+        transition: all 0.15s;
+      }
+      .sidebar-item:hover {
+        background: #0A0908;
+        color: #fff;
+      }
+      .sidebar-item.active {
+        background: #0A0908;
+        color: #fff;
+        border-left-color: #D6CCC1;
+        font-weight: 600;
+      }
+      .sidebar-item .icon {
+        font-size: 1.05rem;
+        width: 22px;
+        text-align: center;
+      }
+      .sidebar-badge {
+        background: #ef4444;
+        color: #fff;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 1px 7px;
+        border-radius: 10px;
+        margin-left: auto;
+      }
+      .sidebar-badge.yellow {
+        background: #f59e0b;
+      }
+      .sidebar-spacer {
+        flex: 1;
+      }
+      .sidebar-tools {
+        padding: 10px 16px 18px;
+        border-top: 1px solid #1a2925;
+      }
+      .btn-sidebar {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 8px;
+      }
+      .save-status {
+        font-size: 0.72rem;
+        color: #cbd5e1;
+        line-height: 1.4;
+      }
 
-function changeMonth(mod,d){const v=view[mod];v.m+=d;if(v.m>11){v.m=0;v.y++}if(v.m<0){v.m=11;v.y--}render()}
-function updateMonthNav(mod){const v=view[mod];const s=mod==='pagar'?'p':'r';
-  document.getElementById('month-label-'+s).textContent=MONTHS[v.m]+' '+v.y;
-  document.getElementById('btn-prev-'+s).disabled=(v.y===MIN_Y&&v.m===MIN_M);
-  document.getElementById('btn-next-'+s).disabled=(v.y===MAX_Y&&v.m===MAX_M);}
+      /* ── Main ── */
+      .main {
+        margin-left: 240px;
+        flex: 1;
+        padding: 24px 28px;
+        min-height: 100vh;
+      }
+      .page {
+        display: none;
+      }
+      .page.active {
+        display: block;
+      }
 
-// ── Render ──
-function render(){renderVencidas();renderPagar();renderReceber();renderHonorarios();
-  const titles={vencidas:'Contas Vencidas',pagar:'Contas a Pagar',receber:'Contas a Receber',honorarios:'Honorarios a Definir'};
-  document.title=titles[curPage]+' - Gestao Financeira';}
+      /* ── Header ── */
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .page-header h1 {
+        font-size: 1.35rem;
+        color: #2c3e50;
+      }
+      .header-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        border: none;
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .btn-primary {
+        background: #223631;
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: #1a2925;
+      }
+      .btn-green {
+        background: #059669;
+        color: #fff;
+      }
+      .btn-green:hover {
+        background: #047857;
+      }
+      .btn-blue {
+        background: #2563eb;
+        color: #fff;
+      }
+      .btn-blue:hover {
+        background: #1d4ed8;
+      }
+      .btn-amber {
+        background: #d97706;
+        color: #fff;
+      }
+      .btn-amber:hover {
+        background: #b45309;
+      }
+      .btn-red {
+        background: #dc2626;
+        color: #fff;
+      }
+      .btn-red:hover {
+        background: #b91c1c;
+      }
+      .btn-sm {
+        padding: 5px 10px;
+        font-size: 0.75rem;
+      }
 
-function renderVencidas(){
-  const list=getVencidas();
-  const tbody=document.getElementById('tbody-vencidas');
-  tbody.innerHTML='';
-  document.getElementById('badge-vencidas').textContent=list.length;
-  document.getElementById('badge-vencidas').style.display=list.length?'':'none';
-  if(!list.length){
-    tbody.innerHTML='<tr><td colspan="6" class="empty-msg">Nenhuma conta vencida. Tudo em dia!</td></tr>';
-    document.getElementById('tfoot-vencidas').style.display='none';
-    document.getElementById('sv-total').textContent='R$ 0,00';
-    document.getElementById('sv-count').textContent='0';
-    document.getElementById('sv-oldest').textContent='-';
-  } else {
-    document.getElementById('tfoot-vencidas').style.display='';
-    list.forEach(c=>{
-      const tr=document.createElement('tr');
-      const autoTag=c.auto?'<span class="tag tag-auto">auto</span>':'';
-      tr.innerHTML=`<td class="col-check"><input class="check-toggle pending" type="checkbox" onclick="markVencidaPaid('${c._monthKey}',${c._idx})"></td><td>${fmtDateFull(c.date)}</td><td>${c.title}${autoTag}</td><td class="col-days danger">${c._days}d</td><td class="col-value">${fmt(c.value)}</td><td class="col-status"><span class="badge pendente" onclick="markVencidaPaid('${c._monthKey}',${c._idx})">Pendente</span></td>`;
-      tbody.appendChild(tr);
-    });
-    const total=list.reduce((s,c)=>s+c.value,0);
-    document.getElementById('sv-total').textContent='R$ '+fmt(total);
-    document.getElementById('sv-count').textContent=list.length;
-    document.getElementById('sv-oldest').textContent=fmtDateFull(list[0].date);
-    document.getElementById('foot-vencidas').textContent=fmt(total);
-  }
-}
+      /* ── Month nav ── */
+      .month-nav {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        background: #fff;
+        padding: 10px 16px;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .month-nav button {
+        background: #EAE0D5;
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        cursor: pointer;
+        color: #223631;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .month-nav button:hover {
+        background: #D6CCC1;
+      }
+      .month-nav button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      .month-label {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #2c3e50;
+        min-width: 180px;
+        text-align: center;
+      }
 
-function markVencidaPaid(mk,idx){store.pagar[mk][idx].paid=true;save();render();}
+      /* ── Cards ── */
+      .summary {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      .card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 16px 20px;
+        flex: 1;
+        min-width: 140px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .card .label {
+        font-size: 0.72rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .card .value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-top: 4px;
+      }
+      .card .value.total-pagar {
+        color: #e74c3c;
+      }
+      .card .value.total-receber {
+        color: #2563eb;
+      }
+      .card .value.paid {
+        color: #27ae60;
+      }
+      .card .value.pending {
+        color: #f39c12;
+      }
+      .card .value.vencido {
+        color: #dc2626;
+      }
+      .card .value.amber {
+        color: #d97706;
+      }
+      .card.card-danger {
+        border-left: 4px solid #ef4444;
+      }
 
-function renderPagar(){
-  updateMonthNav('pagar');const list=getList('pagar');
-  const pend=list.filter(c=>!c.paid),done=list.filter(c=>c.paid),sorted=[...pend,...done];
-  const tbody=document.getElementById('tbody-pagar');tbody.innerHTML='';
-  if(!sorted.length){tbody.innerHTML='<tr><td colspan="5" class="empty-msg">Nenhuma conta a pagar neste mes.</td></tr>';document.getElementById('tfoot-pagar').style.display='none'}
-  else{document.getElementById('tfoot-pagar').style.display='';
-    sorted.forEach(c=>{const idx=list.indexOf(c);const tr=document.createElement('tr');
-      if(c.paid)tr.className='row-paid';const at=c.auto?'<span class="tag tag-auto">auto</span>':'';
-      tr.innerHTML=`<td class="col-check"><input class="check-toggle ${c.paid?'':'pending'}" type="checkbox" ${c.paid?'checked':''} onclick="toggle('pagar',${idx})"></td><td>${fmtDate(c.date)}</td><td>${c.title}${at}</td><td class="col-value">${fmt(c.value)}</td><td class="col-status"><span class="badge ${c.paid?'pago':'pendente'}" onclick="toggle('pagar',${idx})">${c.paid?'Pago':'Pendente'}</span></td>`;
-      tbody.appendChild(tr)});}
-  const total=list.reduce((s,c)=>s+c.value,0),ps=done.reduce((s,c)=>s+c.value,0);
-  document.getElementById('sp-total').textContent='R$ '+fmt(total);
-  document.getElementById('sp-paid').textContent='R$ '+fmt(ps);
-  document.getElementById('sp-pending').textContent='R$ '+fmt(total-ps);
-  document.getElementById('sp-count').textContent=list.length;
-  document.getElementById('foot-pagar').textContent=fmt(total);
-}
+      /* ── Table ── */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      thead {
+        background: #223631;
+        color: #fff;
+      }
+      .receber-table thead {
+        background: #1e40af;
+      }
+      .vencidas-table thead {
+        background: #991b1b;
+      }
+      .honorarios-table thead {
+        background: #92400e;
+      }
+      th {
+        padding: 12px 14px;
+        text-align: left;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+      }
+      th.col-check {
+        text-align: center;
+        width: 56px;
+      }
+      th.col-value {
+        text-align: right;
+      }
+      th.col-status {
+        text-align: center;
+      }
+      th.col-days {
+        text-align: center;
+      }
+      th.col-actions {
+        text-align: center;
+        width: 100px;
+      }
+      td {
+        padding: 11px 14px;
+        border-bottom: 1px solid #eee;
+        font-size: 0.88rem;
+      }
+      td.col-check {
+        text-align: center;
+      }
+      td.col-value {
+        text-align: right;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      td.col-status {
+        text-align: center;
+      }
+      td.col-days {
+        text-align: center;
+        font-weight: 700;
+      }
+      td.col-days.danger {
+        color: #dc2626;
+      }
+      td.col-actions {
+        text-align: center;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover {
+        background: #f8f9fa;
+      }
+      tr.row-paid {
+        background: #f0fdf4;
+        opacity: 0.7;
+      }
+      tr.row-paid td:nth-child(2) {
+        text-decoration: line-through;
+        color: #999;
+      }
+      tr.row-received {
+        background: #eff6ff;
+        opacity: 0.7;
+      }
+      tr.row-received td:nth-child(2) {
+        text-decoration: line-through;
+        color: #999;
+      }
+      .badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.73rem;
+        font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+      }
+      .badge.pago {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .badge.pendente {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .badge.recebido {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+      .badge.vencido {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .badge:hover {
+        transform: scale(1.05);
+      }
+      .check-toggle {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #059669;
+      }
+      .check-toggle.pending {
+        accent-color: #dc2626;
+      }
+      tfoot td {
+        font-weight: 700;
+        background: #f8f9fa;
+        font-size: 1rem;
+        border-top: 2px solid #4a5568;
+      }
+      .receber-table tfoot td {
+        border-top-color: #1e40af;
+      }
+      .vencidas-table tfoot td {
+        border-top-color: #991b1b;
+      }
+      .empty-msg {
+        text-align: center;
+        padding: 40px;
+        color: #aaa;
+        font-size: 0.95rem;
+      }
+      .detail-sub {
+        color: #888;
+        font-size: 0.78rem;
+        display: block;
+        margin-top: 2px;
+      }
+      .tag {
+        display: inline-block;
+        padding: 1px 7px;
+        border-radius: 6px;
+        font-size: 0.68rem;
+        font-weight: 600;
+        margin-left: 6px;
+        vertical-align: middle;
+      }
+      .tag-parceiro {
+        background: #fce7f3;
+        color: #9d174d;
+      }
+      .tag-auto {
+        background: #e0e7ff;
+        color: #3730a3;
+      }
 
-function renderReceber(){
-  updateMonthNav('receber');const list=getList('receber');
-  const pend=list.filter(c=>!c.paid),done=list.filter(c=>c.paid),sorted=[...pend,...done];
-  const tbody=document.getElementById('tbody-receber');tbody.innerHTML='';
-  if(!sorted.length){tbody.innerHTML='<tr><td colspan="5" class="empty-msg">Nenhuma conta a receber neste mes.</td></tr>';document.getElementById('tfoot-receber').style.display='none'}
-  else{document.getElementById('tfoot-receber').style.display='';
-    sorted.forEach(c=>{const idx=list.indexOf(c);const tr=document.createElement('tr');
-      if(c.paid)tr.className='row-received';const lbl=c.paid?'Recebido':'Pendente';const cls=c.paid?'recebido':'pendente';
-      let sub='<span class="detail-sub">'+c.client;
-      if(c.dist&&c.dist.length){sub+=' &mdash; ';sub+=c.dist.map(d=>d.name+': R$ '+fmt(d.value)).join(' | ')}
-      sub+='</span>';const ct=c.type==='complexa'?'<span class="tag tag-parceiro">contrato</span>':'';
-      tr.innerHTML=`<td class="col-check"><input class="check-toggle ${c.paid?'':'pending'}" type="checkbox" ${c.paid?'checked':''} onclick="toggle('receber',${idx})"></td><td>${fmtDate(c.date)}</td><td>${c.title}${ct}${sub}</td><td class="col-value">${fmt(c.value)}</td><td class="col-status"><span class="badge ${cls}" onclick="toggle('receber',${idx})">${lbl}</span></td>`;
-      tbody.appendChild(tr)});}
-  const total=list.reduce((s,c)=>s+c.value,0),rs=done.reduce((s,c)=>s+c.value,0);
-  document.getElementById('sr-total').textContent='R$ '+fmt(total);
-  document.getElementById('sr-received').textContent='R$ '+fmt(rs);
-  document.getElementById('sr-pending').textContent='R$ '+fmt(total-rs);
-  document.getElementById('sr-count').textContent=list.length;
-  document.getElementById('foot-receber').textContent=fmt(total);
-}
+      /* Honorarios cards */
+      .hon-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
+      }
+      .hon-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 18px 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid #d97706;
+      }
+      .hon-card h3 {
+        font-size: 0.95rem;
+        color: #2c3e50;
+        margin-bottom: 4px;
+      }
+      .hon-card .hon-client {
+        font-size: 0.82rem;
+        color: #888;
+        margin-bottom: 10px;
+      }
+      .hon-card .hon-info {
+        font-size: 0.82rem;
+        color: #555;
+        margin-bottom: 4px;
+      }
+      .hon-card .hon-info strong {
+        color: #333;
+      }
+      .hon-card .hon-obs {
+        font-size: 0.78rem;
+        color: #999;
+        margin-top: 8px;
+        font-style: italic;
+      }
+      .hon-card .hon-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+      }
+      .hon-date {
+        font-size: 0.72rem;
+        color: #aaa;
+        margin-top: 6px;
+      }
 
-function renderHonorarios(){
-  const list=store.honorarios;
-  const tbody=document.getElementById('tbody-honorarios');
-  const empty=document.getElementById('hon-empty');
-  const tableContainer=document.getElementById('hon-table-container');
-  document.getElementById('badge-honorarios').textContent=list.length;
-  document.getElementById('badge-honorarios').style.display=list.length?'':'none';
-  if(!list.length){
-    tbody.innerHTML='';
-    tableContainer.style.display='none';
-    empty.style.display='block';
-    document.getElementById('sh-total').textContent='R$ 0,00';
-    document.getElementById('sh-taques').textContent='R$ 0,00';
-    document.getElementById('sh-count').textContent='0';
-    return;
-  }
-  empty.style.display='none';
-  tableContainer.style.display='';
-  const total=list.reduce((s,h)=>s+(h.value||0),0);
-  const taquesTotal=list.reduce((s,h)=>s+(h.taquesValue||0),0);
-  document.getElementById('sh-total').textContent='R$ '+fmt(total);
-  document.getElementById('sh-taques').textContent='R$ '+fmt(taquesTotal);
-  document.getElementById('sh-count').textContent=list.length;
-  tbody.innerHTML='';
-  list.forEach((h,i)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${fmtDateFull(h.date)}</td>
-      <td><strong>${h.client}</strong><span class="detail-sub">${h.title}</span><span class="detail-sub" style="font-style:italic;font-size:0.75rem">${h.obs||''}</span></td>
-      <td class="col-status">${h.situacao||'-'}</td>
-      <td class="col-value">${fmt(h.value||0)}</td>
-      <td class="col-value">${fmt(h.taquesValue||0)}</td>
+      /* ── Modal ── */
+      .overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 100;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 40px;
+        overflow-y: auto;
+      }
+      .overlay.active {
+        display: flex;
+      }
+      .modal {
+        background: #fff;
+        border-radius: 12px;
+        padding: 28px;
+        width: 560px;
+        max-width: 94vw;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        margin-bottom: 40px;
+      }
+      .modal h2 {
+        font-size: 1.1rem;
+        margin-bottom: 18px;
+        color: #2c3e50;
+      }
+      .modal label {
+        display: block;
+        font-size: 0.8rem;
+        color: #555;
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+      .modal input,
+      .modal select,
+      .modal textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        margin-bottom: 14px;
+        outline: none;
+        font-family: inherit;
+      }
+      .modal input:focus,
+      .modal select:focus,
+      .modal textarea:focus {
+        border-color: #4a5568;
+      }
+      .modal textarea {
+        resize: vertical;
+        min-height: 50px;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 10px;
+      }
+      .modal-actions button {
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-cancel {
+        background: #eee;
+        color: #555;
+      }
+      .btn-cancel:hover {
+        background: #ddd;
+      }
+      .btn-save {
+        background: #4a5568;
+        color: #fff;
+      }
+      .btn-save:hover {
+        background: #2d3748;
+      }
+      .btn-save-blue {
+        background: #2563eb;
+        color: #fff;
+      }
+      .btn-save-blue:hover {
+        background: #1d4ed8;
+      }
+      .btn-save-amber {
+        background: #d97706;
+        color: #fff;
+      }
+      .btn-save-amber:hover {
+        background: #b45309;
+      }
+      .form-row {
+        display: flex;
+        gap: 12px;
+      }
+      .form-row > div {
+        flex: 1;
+      }
+      .section-title {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 8px 0 12px;
+        padding-top: 12px;
+        border-top: 1px solid #eee;
+      }
+      .dist-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .dist-row input {
+        margin-bottom: 0;
+      }
+      .dist-row .dist-name {
+        flex: 2;
+      }
+      .dist-row .dist-val {
+        flex: 1;
+      }
+      .dist-row .dist-remove {
+        background: #fee2e2;
+        color: #dc2626;
+        border: none;
+        width: 32px;
+        height: 38px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+      .dist-row .dist-remove:hover {
+        background: #fecaca;
+      }
+      .btn-add-dist {
+        background: none;
+        border: 1px dashed #cbd5e1;
+        color: #64748b;
+        padding: 8px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        width: 100%;
+        margin-bottom: 14px;
+      }
+      .btn-add-dist:hover {
+        border-color: #94a3b8;
+        color: #475569;
+      }
+      .dist-summary {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+        font-size: 0.82rem;
+      }
+      .dist-summary .line {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3px;
+      }
+      .dist-summary .line.total {
+        font-weight: 700;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 6px;
+        margin-top: 4px;
+      }
+      .dist-summary .line.ok {
+        color: #059669;
+      }
+      .dist-summary .line.warn {
+        color: #dc2626;
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="sidebar-logo">Gestao Financeira</div>
+      <div class="sidebar-section">Modulos</div>
+      <div
+        class="sidebar-item"
+        onclick="switchPage('vencidas')"
+        id="nav-vencidas"
+      >
+        <span class="icon">&#9888;</span> Contas Vencidas
+        <span class="sidebar-badge" id="badge-vencidas">0</span>
+      </div>
+      <div
+        class="sidebar-item active"
+        onclick="switchPage('pagar')"
+        id="nav-pagar"
+      >
+        <span class="icon">&#128228;</span> Contas a Pagar
+      </div>
+      <div
+        class="sidebar-item"
+        onclick="switchPage('receber')"
+        id="nav-receber"
+      >
+        <span class="icon">&#128229;</span> Contas a Receber
+      </div>
+      <div
+        class="sidebar-item"
+        onclick="switchPage('honorarios')"
+        id="nav-honorarios"
+      >
+        <span class="icon">&#128203;</span> Hon. a Definir
+        <span class="sidebar-badge yellow" id="badge-honorarios">0</span>
+      </div>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-section">Seguranca (Firebase)</div>
+      <div class="sidebar-tools">
+        <button class="btn btn-green btn-sidebar" onclick="exportBackup()">
+          Exportar Backup
+        </button>
+        <button
+          class="btn btn-primary btn-sidebar"
+          onclick="document.getElementById('backup-file').click()"
+        >
+          Restaurar Backup
+        </button>
+        <div class="save-status" id="save-status">Conectando...</div>
+        <input
+          type="file"
+          id="backup-file"
+          accept="application/json"
+          style="display: none"
+          onchange="importBackup(event)"
+        />
+      </div>
+    </aside>
+
+    <div class="main">
+      <!-- ═══ PAGE: VENCIDAS ═══ -->
+      <div class="page" id="page-vencidas">
+        <div class="page-header">
+          <h1 style="color: #dc2626">Contas a Pagar Vencidas</h1>
+        </div>
+        <div class="summary">
+          <div class="card card-danger">
+            <div class="label">Total Vencido</div>
+            <div class="value vencido" id="sv-total"></div>
+          </div>
+          <div class="card">
+            <div class="label">Itens Vencidos</div>
+            <div class="value vencido" id="sv-count"></div>
+          </div>
+          <div class="card">
+            <div class="label">Mais Antiga</div>
+            <div class="value" id="sv-oldest" style="font-size: 1.1rem"></div>
+          </div>
+        </div>
+        <table class="vencidas-table">
+          <thead>
+            <tr>
+              <th class="col-check">Check</th>
+              <th>Vencimento</th>
+              <th>Titulo da Conta</th>
+              <th class="col-days">Dias</th>
+              <th class="col-value">Valor (R$)</th>
+              <th class="col-status">Acao</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-vencidas"></tbody>
+          <tfoot id="tfoot-vencidas">
+            <tr>
+              <td colspan="4">Total Vencido</td>
+              <td class="col-value" id="foot-vencidas"></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- ═══ PAGE: CONTAS A PAGAR ═══ -->
+      <div class="page active" id="page-pagar">
+        <div class="page-header">
+          <h1>Contas a Pagar</h1>
+          <div class="header-actions">
+            <button class="btn btn-primary" onclick="openModalPagar()">
+              + Nova Conta a Pagar
+            </button>
+          </div>
+        </div>
+        <div class="month-nav">
+          <button id="btn-prev-p" onclick="changeMonth('pagar', -1)">
+            &#8592;
+          </button>
+          <div class="month-label" id="month-label-p"></div>
+          <button id="btn-next-p" onclick="changeMonth('pagar', 1)">
+            &#8594;
+          </button>
+        </div>
+        <div class="summary">
+          <div class="card">
+            <div class="label">Total</div>
+            <div class="value total-pagar" id="sp-total"></div>
+          </div>
+          <div class="card">
+            <div class="label">Pago</div>
+            <div class="value paid" id="sp-paid"></div>
+          </div>
+          <div class="card">
+            <div class="label">Pendente</div>
+            <div class="value pending" id="sp-pending"></div>
+          </div>
+          <div class="card">
+            <div class="label">Itens</div>
+            <div class="value" id="sp-count"></div>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th class="col-check">Check</th>
+              <th>Data</th>
+              <th>Titulo da Conta</th>
+              <th class="col-value">Valor (R$)</th>
+              <th class="col-status">Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-pagar"></tbody>
+          <tfoot id="tfoot-pagar">
+            <tr>
+              <td colspan="3">Total Geral</td>
+              <td class="col-value" id="foot-pagar"></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- ═══ PAGE: CONTAS A RECEBER ═══ -->
+      <div class="page" id="page-receber">
+        <div class="page-header">
+          <h1>Contas a Receber</h1>
+          <div class="header-actions">
+            <button class="btn btn-green" onclick="openModalReceber('simples')">
+              + Conta Simples
+            </button>
+            <button class="btn btn-blue" onclick="openModalReceber('complexa')">
+              + Conta Complexa
+            </button>
+          </div>
+        </div>
+        <div class="month-nav">
+          <button id="btn-prev-r" onclick="changeMonth('receber', -1)">
+            &#8592;
+          </button>
+          <div class="month-label" id="month-label-r"></div>
+          <button id="btn-next-r" onclick="changeMonth('receber', 1)">
+            &#8594;
+          </button>
+        </div>
+        <div class="summary">
+          <div class="card">
+            <div class="label">Total</div>
+            <div class="value total-receber" id="sr-total"></div>
+          </div>
+          <div class="card">
+            <div class="label">Recebido</div>
+            <div class="value paid" id="sr-received"></div>
+          </div>
+          <div class="card">
+            <div class="label">Pendente</div>
+            <div class="value pending" id="sr-pending"></div>
+          </div>
+          <div class="card">
+            <div class="label">Itens</div>
+            <div class="value" id="sr-count"></div>
+          </div>
+        </div>
+        <table class="receber-table">
+          <thead>
+            <tr>
+              <th class="col-check">Check</th>
+              <th>Data</th>
+              <th>Titulo / Cliente</th>
+              <th class="col-value">Valor (R$)</th>
+              <th class="col-status">Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-receber"></tbody>
+          <tfoot id="tfoot-receber">
+            <tr>
+              <td colspan="3">Total Geral</td>
+              <td class="col-value" id="foot-receber"></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- ═══ PAGE: HONORARIOS A DEFINIR ═══ -->
+      <div class="page" id="page-honorarios">
+        <div class="page-header">
+          <h1 style="color: #92400e">Honorarios a Definir</h1>
+          <div class="header-actions">
+            <button class="btn btn-amber" onclick="openModalHonorario()">
+              + Novo Honorario
+            </button>
+          </div>
+        </div>
+        <div class="summary">
+          <div class="card">
+            <div class="label">Valor Estimado Total</div>
+            <div class="value amber" id="sh-total"></div>
+          </div>
+          <div class="card">
+            <div class="label">Valor Estimado Taques</div>
+            <div class="value amber" id="sh-taques"></div>
+          </div>
+          <div class="card">
+            <div class="label">Contratos Pendentes</div>
+            <div class="value amber" id="sh-count"></div>
+          </div>
+        </div>
+        <table class="honorarios-table" id="hon-table-container">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Cliente / Descrição</th>
+              <th class="col-status">Situação</th>
+              <th class="col-value">Valor Total (R$)</th>
+              <th class="col-value">Valor Taques (R$)</th>
+              <th class="col-actions">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-honorarios"></tbody>
+          <tfoot id="tfoot-honorarios">
+            <tr>
+              <td colspan="3">Total Geral</td>
+              <td class="col-value" id="foot-hon-total"></td>
+              <td class="col-value" id="foot-hon-taques"></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+        <div
+          id="hon-empty"
+          class="empty-msg"
+          style="
+            display: none;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+          "
+        >
+          Nenhum honorario pendente de definicao.
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Conta a Pagar -->
+    <div
+      class="overlay"
+      id="overlay-pagar"
+      onclick="if (event.target === this) closeModal('pagar');"
+    >
+      <div class="modal">
+        <h2>Nova Conta a Pagar</h2>
+        <label>Data</label><input type="date" id="inp-p-date" />
+        <label>Titulo da Conta</label
+        ><input
+          type="text"
+          id="inp-p-title"
+          placeholder="Ex: Aluguel do escritorio"
+        />
+        <label>Valor (R$)</label
+        ><input
+          type="text"
+          id="inp-p-value"
+          placeholder="Ex: 1.500,00"
+          inputmode="decimal"
+        />
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('pagar')">
+            Cancelar
+          </button>
+          <button class="btn-save" onclick="addContaPagar()">Adicionar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Simples -->
+    <div
+      class="overlay"
+      id="overlay-simples"
+      onclick="if (event.target === this) closeModal('simples');"
+    >
+      <div class="modal">
+        <h2>Nova Conta a Receber - Simples</h2>
+        <div class="form-row">
+          <div><label>Data</label><input type="date" id="inp-s-date" /></div>
+          <div>
+            <label>Valor (R$)</label
+            ><input
+              type="text"
+              id="inp-s-value"
+              placeholder="1.500,00"
+              inputmode="decimal"
+            />
+          </div>
+        </div>
+        <label>Cliente</label
+        ><input type="text" id="inp-s-client" placeholder="Ex: Joao Silva" />
+        <label>Descricao</label
+        ><input
+          type="text"
+          id="inp-s-title"
+          placeholder="Ex: Honorarios advocaticios"
+        />
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('simples')">
+            Cancelar
+          </button>
+          <button class="btn-save-blue" onclick="addSimples()">
+            Adicionar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Complexa -->
+    <div
+      class="overlay"
+      id="overlay-complexa"
+      onclick="if (event.target === this) closeModal('complexa');"
+    >
+      <div class="modal">
+        <h2>Nova Conta a Receber - Complexa</h2>
+        <div class="section-title">Dados do contrato</div>
+        <label>Cliente</label
+        ><input
+          type="text"
+          id="inp-c-client"
+          placeholder="Ex: Vitor Krzewinski"
+        />
+        <label>Descricao / Caso</label
+        ><input
+          type="text"
+          id="inp-c-title"
+          placeholder="Ex: Honorarios - Acidente de transito"
+        />
+        <div class="form-row">
+          <div>
+            <label>Valor total (R$)</label
+            ><input
+              type="text"
+              id="inp-c-total"
+              placeholder="30.000,00"
+              inputmode="decimal"
+              oninput="calcComplex()"
+            />
+          </div>
+          <div>
+            <label>Parcelas</label
+            ><input
+              type="number"
+              id="inp-c-parcelas"
+              min="1"
+              value="15"
+              oninput="calcComplex()"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>1o vencimento</label><input type="date" id="inp-c-date" />
+          </div>
+          <div>
+            <label>Dia do vencimento</label
+            ><input type="number" id="inp-c-dia" min="1" max="31" value="10" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Forma de pagamento</label
+            ><select id="inp-c-forma">
+              <option value="Boleto">Boleto</option>
+              <option value="PIX">PIX</option>
+              <option value="Transferencia">Transferencia</option>
+              <option value="Cartao">Cartao</option>
+              <option value="Dinheiro">Dinheiro</option>
+            </select>
+          </div>
+          <div>
+            <label>Valor da parcela</label
+            ><input
+              type="text"
+              id="inp-c-vparcela"
+              readonly
+              style="background: #f8fafc; color: #2563eb; font-weight: 700"
+            />
+          </div>
+        </div>
+        <div class="section-title">Distribuicao dos valores (por parcela)</div>
+        <div id="dist-container"></div>
+        <button class="btn-add-dist" onclick="addDistRow()">
+          + Adicionar repasse
+        </button>
+        <div class="dist-summary" id="dist-summary"></div>
+        <label>Observacoes</label
+        ><textarea
+          id="inp-c-obs"
+          placeholder="Detalhes adicionais..."
+        ></textarea>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('complexa')">
+            Cancelar
+          </button>
+          <button class="btn-save-blue" onclick="addComplexa()">
+            Lancar Contrato
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Honorario a Definir -->
+    <div
+      class="overlay"
+      id="overlay-honorario"
+      onclick="if (event.target === this) closeModal('honorario');"
+    >
+      <div class="modal">
+        <h2>Novo Honorario a Definir</h2>
+        <label>Cliente</label
+        ><input
+          type="text"
+          id="inp-h-client"
+          placeholder="Ex: Maria da Silva"
+        />
+        <label>Caso / Descricao</label
+        ><input
+          type="text"
+          id="inp-h-title"
+          placeholder="Ex: Acao trabalhista - Empresa XYZ"
+        />
+        <div class="form-row">
+          <div>
+            <label>Valor total (R$)</label
+            ><input
+              type="text"
+              id="inp-h-value"
+              placeholder="Ex: 15.000,00"
+              inputmode="decimal"
+            />
+          </div>
+          <div>
+            <label>Valor Taques (R$)</label
+            ><input
+              type="text"
+              id="inp-h-taques"
+              placeholder="Ex: 7.500,00"
+              inputmode="decimal"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Data do contrato</label><input type="date" id="inp-h-date" />
+          </div>
+          <div>
+            <label>Situacao</label
+            ><input
+              type="text"
+              id="inp-h-situacao"
+              placeholder="Ex: Aguardando definicao"
+            />
+          </div>
+        </div>
+        <label>Observacoes</label
+        ><textarea
+          id="inp-h-obs"
+          placeholder="Detalhes adicionais..."
+        ></textarea>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('honorario')">
+            Cancelar
+          </button>
+          <button class="btn-save-amber" onclick="addHonorario()">
+            Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        getDoc,
+      } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBpX11wOCdIwV26O9w3WwqUjtKkLqJejPo",
+        authDomain: "financas-marco-2026.firebaseapp.com",
+        projectId: "financas-marco-2026",
+        storageBucket: "financas-marco-2026.firebasestorage.app",
+        messagingSenderId: "173551902595",
+        appId: "1:173551902595:web:62a285fe9f1b034c0260b6",
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      const MONTHS = [
+        "Janeiro",
+        "Fevereiro",
+        "Marco",
+        "Abril",
+        "Maio",
+        "Junho",
+        "Julho",
+        "Agosto",
+        "Setembro",
+        "Outubro",
+        "Novembro",
+        "Dezembro",
+      ];
+      const STORAGE_KEY = "fin-data-v5";
+      const LEGACY_STORAGE_KEY = "fin-data-v4";
+      const BACKUP_KEY = "fin-data-v5-backups";
+      const META_KEY = "fin-data-v5-meta";
+      const MAX_BACKUPS = 20;
+      const ENABLE_DEMO_DATA =
+        new URLSearchParams(location.search).get("demo") === "1";
+      const MIN_Y = 2016,
+        MIN_M = 0,
+        MAX_Y = 2030,
+        MAX_M = 11;
+      const TODAY = new Date();
+      TODAY.setHours(0, 0, 0, 0);
+      const TODAY_STR =
+        TODAY.getFullYear() +
+        "-" +
+        String(TODAY.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(TODAY.getDate()).padStart(2, "0");
+
+      let curPage = "pagar";
+      let view = { pagar: { y: 2026, m: 2 }, receber: { y: 2026, m: 2 } };
+      let store = { pagar: {}, receber: {}, honorarios: [] };
+      let distRows = [];
+
+      function mkey(y, m) {
+        return y + "-" + String(m + 1).padStart(2, "0");
+      }
+      function fmt(v) {
+        return v.toLocaleString("pt-BR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+      }
+      function fmtDate(d) {
+        const p = d.split("-");
+        return p[2] + "/" + p[1];
+      }
+      function fmtDateFull(d) {
+        const p = d.split("-");
+        return p[2] + "/" + p[1] + "/" + p[0];
+      }
+      function fmtDateTime(d) {
+        const x = new Date(d);
+        return x.toLocaleString("pt-BR");
+      }
+      function parseVal(s) {
+        return parseFloat(s.replace(/\./g, "").replace(",", "."));
+      }
+      function daysDiff(d) {
+        const dt = new Date(d + "T12:00:00");
+        const diff = TODAY - dt;
+        return Math.floor(diff / 86400000);
+      }
+
+      function defaultStore() {
+        return { pagar: {}, receber: {}, honorarios: [] };
+      }
+      function ensureStoreShape(data) {
+        const safe = data && typeof data === "object" ? data : {};
+        return {
+          pagar: safe.pagar && typeof safe.pagar === "object" ? safe.pagar : {},
+          receber:
+            safe.receber && typeof safe.receber === "object"
+              ? safe.receber
+              : {},
+          honorarios: Array.isArray(safe.honorarios) ? safe.honorarios : [],
+        };
+      }
+      function getBackupCount() {
+        try {
+          return JSON.parse(localStorage.getItem(BACKUP_KEY) || "[]").length;
+        } catch (e) {
+          return 0;
+        }
+      }
+      function updateSaveStatus(savedAt, isCloud = false) {
+        const el = document.getElementById("save-status");
+        if (!el) return;
+        let txt = "Dados locais ativos.";
+        if (savedAt) {
+          txt = isCloud
+            ? "Salvo na nuvem: " + fmtDateTime(savedAt)
+            : "Salvo local: " + fmtDateTime(savedAt);
+        } else {
+          try {
+            const meta = JSON.parse(localStorage.getItem(META_KEY) || "null");
+            if (meta && meta.lastSavedAt)
+              txt = "Ultimo salvamento: " + fmtDateTime(meta.lastSavedAt) + ".";
+          } catch (e) {}
+        }
+        el.textContent = txt;
+      }
+      function saveBackupSnapshot(savedAt) {
+        try {
+          const backups = JSON.parse(localStorage.getItem(BACKUP_KEY) || "[]");
+          backups.unshift({ savedAt: savedAt, data: store });
+          localStorage.setItem(
+            BACKUP_KEY,
+            JSON.stringify(backups.slice(0, MAX_BACKUPS)),
+          );
+        } catch (e) {}
+      }
+      async function load() {
+        try {
+          const docRef = doc(db, "financeiro", "store_v5");
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            store = ensureStoreShape(docSnap.data());
+            updateSaveStatus(new Date(), true);
+          } else {
+            // Fallback local
+            const raw =
+              localStorage.getItem(STORAGE_KEY) ||
+              localStorage.getItem(LEGACY_STORAGE_KEY);
+            store = raw ? ensureStoreShape(JSON.parse(raw)) : defaultStore();
+            if (raw) save(false);
+            else updateSaveStatus();
+          }
+        } catch (e) {
+          console.error("Firebase load error", e);
+          const raw =
+            localStorage.getItem(STORAGE_KEY) ||
+            localStorage.getItem(LEGACY_STORAGE_KEY);
+          store = raw ? ensureStoreShape(JSON.parse(raw)) : defaultStore();
+          updateSaveStatus();
+        }
+
+        const migKey = "mig_hon_2";
+        if (!localStorage.getItem(migKey)) {
+          store.honorarios.push({
+            client: "Fábio Rodrigo Neves",
+            title: "Honorários - Definição",
+            value: 8000,
+            taquesValue: 4000,
+            date: TODAY_STR,
+            situacao: "Aguardando definição",
+            obs: "50% Taques",
+            createdAt: new Date().toISOString(),
+          });
+          store.honorarios.push({
+            client: "Edivaldo Dobrychtop",
+            title: "Honorários - Definição",
+            value: 12000,
+            taquesValue: 6000,
+            date: TODAY_STR,
+            situacao: "Aguardando definição",
+            obs: "50% Taques",
+            createdAt: new Date().toISOString(),
+          });
+          store.honorarios.push({
+            client: "Pedro Colaço",
+            title: "Honorários - Definição",
+            value: 8000,
+            taquesValue: 4000,
+            date: TODAY_STR,
+            situacao: "Aguardando definição",
+            obs: "50% Taques",
+            createdAt: new Date().toISOString(),
+          });
+          store.honorarios.push({
+            client: "Faurin Batista",
+            title: "Honorários - Definição",
+            value: 30000,
+            taquesValue: 15000,
+            date: TODAY_STR,
+            situacao: "Aguardando definição",
+            obs: "50% Taques",
+            createdAt: new Date().toISOString(),
+          });
+          localStorage.setItem(migKey, "1");
+          save(false);
+        }
+
+        if (ENABLE_DEMO_DATA) seed();
+        render();
+      }
+      async function save(showAlert = true) {
+        try {
+          store = ensureStoreShape(store);
+          const savedAt = new Date().toISOString();
+
+          // Save to Local
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+          localStorage.setItem(
+            META_KEY,
+            JSON.stringify({ lastSavedAt: savedAt }),
+          );
+          saveBackupSnapshot(savedAt);
+
+          // Save to Firebase
+          await setDoc(doc(db, "financeiro", "store_v5"), store);
+          updateSaveStatus(savedAt, true);
+
+          return true;
+        } catch (e) {
+          console.error("Firebase save error", e);
+          updateSaveStatus(new Date().toISOString(), false);
+          if (showAlert)
+            alert(
+              "Aviso: Falha ao salvar na nuvem (Firebase). Os dados foram salvos localmente.",
+            );
+          return false;
+        }
+      }
+      function getList(mod) {
+        const v = view[mod];
+        const k = mkey(v.y, v.m);
+        if (!store[mod][k]) store[mod][k] = [];
+        return store[mod][k];
+      }
+
+      // ── Seed demo (somente com ?demo=1) ──
+      function seed() {
+        if (!store.pagar["2026-03"] || !store.pagar["2026-03"].length) {
+          store.pagar["2026-03"] = [
+            {
+              date: "2026-03-03",
+              title: "Placa - Herbst - Parcela 5/6",
+              value: 1389.66,
+              paid: false,
+            },
+            {
+              date: "2026-03-05",
+              title: "Tarifa bancaria - Sicoob",
+              value: 30,
+              paid: false,
+            },
+            {
+              date: "2026-03-05",
+              title: "Salario Berna - Administrativo",
+              value: 1000,
+              paid: true,
+            },
+            {
+              date: "2026-03-05",
+              title: "Salario Berna - Limpeza",
+              value: 300,
+              paid: true,
+            },
+            {
+              date: "2026-03-10",
+              title: "Anuidade OAB - Lenon",
+              value: 60,
+              paid: false,
+            },
+            {
+              date: "2026-03-10",
+              title: "Anuidade OAB - Gilberto",
+              value: 60,
+              paid: false,
+            },
+            {
+              date: "2026-03-10",
+              title: "Fatura do cartao - Sicoob - Lenon - Final 9980",
+              value: 4531.97,
+              paid: false,
+            },
+            {
+              date: "2026-03-10",
+              title: "Fatura do cartao - Sicoob - Berna - Final 7788",
+              value: 1806.26,
+              paid: false,
+            },
+            {
+              date: "2026-03-10",
+              title: "Carro - Jetta - Parcela 2/60",
+              value: 3186.85,
+              paid: false,
+            },
+            {
+              date: "2026-03-15",
+              title: "Aluguel do escritorio - Sala 01",
+              value: 950,
+              paid: false,
+            },
+            {
+              date: "2026-03-15",
+              title: "Aluguel do escritorio - Sala 02",
+              value: 990,
+              paid: false,
+            },
+            {
+              date: "2026-03-15",
+              title: "Energia eletrica - Sala 1",
+              value: 200,
+              paid: false,
+            },
+            {
+              date: "2026-03-15",
+              title: "Energia eletrica - Sala 2",
+              value: 50,
+              paid: false,
+            },
+            {
+              date: "2026-03-15",
+              title: "Macbook - Parcela 7/10",
+              value: 749.99,
+              paid: false,
+            },
+            {
+              date: "2026-03-15",
+              title: "Plano de celular Vivo",
+              value: 60,
+              paid: false,
+            },
+            {
+              date: "2026-03-16",
+              title: "Sofa do escritorio - ML - Parcela 2/10",
+              value: 232.89,
+              paid: false,
+            },
+            {
+              date: "2026-03-20",
+              title: "Imposto - Simples Nacional (Ref: Fev 2026)",
+              value: 3992.74,
+              paid: false,
+            },
+            {
+              date: "2026-03-30",
+              title: "Imposto - Simples Nacional - Parcelamento 3/12",
+              value: 924.97,
+              paid: false,
+            },
+            {
+              date: "2026-03-30",
+              title: "Assessoria de Marketing",
+              value: 1700,
+              paid: false,
+            },
+            {
+              date: "2026-03-31",
+              title: "Seguro do carro (debita do cartao)",
+              value: 364,
+              paid: false,
+            },
+          ];
+        }
+        const sk = "seed-vitor-v4";
+        if (!localStorage.getItem(sk)) {
+          const cid = "vitor-krzewinski-" + Date.now();
+          for (let i = 0; i < 15; i++) {
+            const mm = 3 + i;
+            const yr = 2026 + Math.floor((mm - 1) / 12);
+            const mo = ((mm - 1) % 12) + 1;
+            const ds = yr + "-" + String(mo).padStart(2, "0") + "-10";
+            const k = yr + "-" + String(mo).padStart(2, "0");
+            const sx = " (" + (i + 1) + "/15)";
+            if (!store.receber[k]) store.receber[k] = [];
+            store.receber[k].push({
+              date: ds,
+              title: "Honorarios - Acidente de transito" + sx,
+              value: 2000,
+              paid: false,
+              client: "Vitor Krzewinski",
+              type: "complexa",
+              forma: "Boleto",
+              contractId: cid,
+              dist: [
+                { name: "Paulo Simons", value: 1000, type: "repasse" },
+                { name: "Gilberto", value: 500, type: "socio" },
+                { name: "Lenon", value: 500, type: "socio" },
+              ],
+            });
+            if (!store.pagar[k]) store.pagar[k] = [];
+            store.pagar[k].push({
+              date: ds,
+              title: "Repasse Paulo Simons - Vitor Krzewinski" + sx,
+              value: 1000,
+              paid: false,
+              auto: true,
+              contractId: cid,
+            });
+          }
+          localStorage.setItem(sk, "1");
+        }
+        save();
+      }
+
+      function exportBackup() {
+        const payload = {
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          data: store,
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const stamp = new Date()
+          .toISOString()
+          .slice(0, 19)
+          .replace(/[:T]/g, "-");
+        a.href = url;
+        a.download = "financeiro-backup-" + stamp + ".json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function importBackup(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          try {
+            const parsed = JSON.parse(ev.target.result);
+            const nextStore = ensureStoreShape(
+              parsed && parsed.data ? parsed.data : parsed,
+            );
+            if (
+              !confirm(
+                "Restaurar este backup e substituir os dados atuais na nuvem?",
+              )
+            )
+              return;
+            store = nextStore;
+            save(true).then(() => render());
+          } catch (e) {
+            alert("Arquivo de backup invalido.");
+          } finally {
+            event.target.value = "";
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      // ── Vencidas: scan ALL pagar data ──
+      function getVencidas() {
+        const result = [];
+        for (const k in store.pagar) {
+          store.pagar[k].forEach((c, idx) => {
+            if (!c.paid && c.date < TODAY_STR) {
+              result.push({
+                ...c,
+                _monthKey: k,
+                _idx: idx,
+                _days: daysDiff(c.date),
+              });
+            }
+          });
+        }
+        result.sort((a, b) => a.date.localeCompare(b.date));
+        return result;
+      }
+
+      // ── Navigation ──
+      function switchPage(pg) {
+        curPage = pg;
+        document
+          .querySelectorAll(".page")
+          .forEach((p) => p.classList.remove("active"));
+        document.getElementById("page-" + pg).classList.add("active");
+        document
+          .querySelectorAll(".sidebar-item")
+          .forEach((i) => i.classList.remove("active"));
+        document.getElementById("nav-" + pg).classList.add("active");
+        render();
+      }
+
+      function changeMonth(mod, d) {
+        const v = view[mod];
+        v.m += d;
+        if (v.m > 11) {
+          v.m = 0;
+          v.y++;
+        }
+        if (v.m < 0) {
+          v.m = 11;
+          v.y--;
+        }
+        render();
+      }
+      function updateMonthNav(mod) {
+        const v = view[mod];
+        const s = mod === "pagar" ? "p" : "r";
+        document.getElementById("month-label-" + s).textContent =
+          MONTHS[v.m] + " " + v.y;
+        document.getElementById("btn-prev-" + s).disabled =
+          v.y === MIN_Y && v.m === MIN_M;
+        document.getElementById("btn-next-" + s).disabled =
+          v.y === MAX_Y && v.m === MAX_M;
+      }
+
+      // ── Render ──
+      function render() {
+        renderVencidas();
+        renderPagar();
+        renderReceber();
+        renderHonorarios();
+        const titles = {
+          vencidas: "Contas Vencidas",
+          pagar: "Contas a Pagar",
+          receber: "Contas a Receber",
+          honorarios: "Honorarios a Definir",
+        };
+        document.title = titles[curPage] + " - Gestao Financeira";
+      }
+
+      function renderVencidas() {
+        const list = getVencidas();
+        const tbody = document.getElementById("tbody-vencidas");
+        tbody.innerHTML = "";
+        document.getElementById("badge-vencidas").textContent = list.length;
+        document.getElementById("badge-vencidas").style.display = list.length
+          ? ""
+          : "none";
+        if (!list.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="6" class="empty-msg">Nenhuma conta vencida. Tudo em dia!</td></tr>';
+          document.getElementById("tfoot-vencidas").style.display = "none";
+          document.getElementById("sv-total").textContent = "R$ 0,00";
+          document.getElementById("sv-count").textContent = "0";
+          document.getElementById("sv-oldest").textContent = "-";
+        } else {
+          document.getElementById("tfoot-vencidas").style.display = "";
+          list.forEach((c) => {
+            const tr = document.createElement("tr");
+            const autoTag = c.auto
+              ? '<span class="tag tag-auto">auto</span>'
+              : "";
+            tr.innerHTML = `<td class="col-check"><input class="check-toggle pending" type="checkbox" onclick="markVencidaPaid('${c._monthKey}',${c._idx})"></td><td>${fmtDateFull(c.date)}</td><td>${c.title}${autoTag}</td><td class="col-days danger">${c._days}d</td><td class="col-value">${fmt(c.value)}</td><td class="col-status"><span class="badge pendente" onclick="markVencidaPaid('${c._monthKey}',${c._idx})">Pendente</span></td>`;
+            tbody.appendChild(tr);
+          });
+          const total = list.reduce((s, c) => s + c.value, 0);
+          document.getElementById("sv-total").textContent = "R$ " + fmt(total);
+          document.getElementById("sv-count").textContent = list.length;
+          document.getElementById("sv-oldest").textContent = fmtDateFull(
+            list[0].date,
+          );
+          document.getElementById("foot-vencidas").textContent = fmt(total);
+        }
+      }
+
+      function markVencidaPaid(mk, idx) {
+        store.pagar[mk][idx].paid = true;
+        save();
+        render();
+      }
+
+      function renderPagar() {
+        updateMonthNav("pagar");
+        const list = getList("pagar");
+        const pend = list.filter((c) => !c.paid),
+          done = list.filter((c) => c.paid),
+          sorted = [...pend, ...done];
+        const tbody = document.getElementById("tbody-pagar");
+        tbody.innerHTML = "";
+        if (!sorted.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="5" class="empty-msg">Nenhuma conta a pagar neste mes.</td></tr>';
+          document.getElementById("tfoot-pagar").style.display = "none";
+        } else {
+          document.getElementById("tfoot-pagar").style.display = "";
+          sorted.forEach((c) => {
+            const idx = list.indexOf(c);
+            const tr = document.createElement("tr");
+            if (c.paid) tr.className = "row-paid";
+            const at = c.auto ? '<span class="tag tag-auto">auto</span>' : "";
+            tr.innerHTML = `<td class="col-check"><input class="check-toggle ${c.paid ? "" : "pending"}" type="checkbox" ${c.paid ? "checked" : ""} onclick="toggle('pagar',${idx})"></td><td>${fmtDate(c.date)}</td><td>${c.title}${at}</td><td class="col-value">${fmt(c.value)}</td><td class="col-status"><span class="badge ${c.paid ? "pago" : "pendente"}" onclick="toggle('pagar',${idx})">${c.paid ? "Pago" : "Pendente"}</span></td>`;
+            tbody.appendChild(tr);
+          });
+        }
+        const total = list.reduce((s, c) => s + c.value, 0),
+          ps = done.reduce((s, c) => s + c.value, 0);
+        document.getElementById("sp-total").textContent = "R$ " + fmt(total);
+        document.getElementById("sp-paid").textContent = "R$ " + fmt(ps);
+        document.getElementById("sp-pending").textContent =
+          "R$ " + fmt(total - ps);
+        document.getElementById("sp-count").textContent = list.length;
+        document.getElementById("foot-pagar").textContent = fmt(total);
+      }
+
+      function renderReceber() {
+        updateMonthNav("receber");
+        const list = getList("receber");
+        const pend = list.filter((c) => !c.paid),
+          done = list.filter((c) => c.paid),
+          sorted = [...pend, ...done];
+        const tbody = document.getElementById("tbody-receber");
+        tbody.innerHTML = "";
+        if (!sorted.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="5" class="empty-msg">Nenhuma conta a receber neste mes.</td></tr>';
+          document.getElementById("tfoot-receber").style.display = "none";
+        } else {
+          document.getElementById("tfoot-receber").style.display = "";
+          sorted.forEach((c) => {
+            const idx = list.indexOf(c);
+            const tr = document.createElement("tr");
+            if (c.paid) tr.className = "row-received";
+            const lbl = c.paid ? "Recebido" : "Pendente";
+            const cls = c.paid ? "recebido" : "pendente";
+            let sub = '<span class="detail-sub">' + c.client;
+            if (c.dist && c.dist.length) {
+              sub += " &mdash; ";
+              sub += c.dist
+                .map((d) => d.name + ": R$ " + fmt(d.value))
+                .join(" | ");
+            }
+            sub += "</span>";
+            const ct =
+              c.type === "complexa"
+                ? '<span class="tag tag-parceiro">contrato</span>'
+                : "";
+            tr.innerHTML = `<td class="col-check"><input class="check-toggle ${c.paid ? "" : "pending"}" type="checkbox" ${c.paid ? "checked" : ""} onclick="toggle('receber',${idx})"></td><td>${fmtDate(c.date)}</td><td>${c.title}${ct}${sub}</td><td class="col-value">${fmt(c.value)}</td><td class="col-status"><span class="badge ${cls}" onclick="toggle('receber',${idx})">${lbl}</span></td>`;
+            tbody.appendChild(tr);
+          });
+        }
+        const total = list.reduce((s, c) => s + c.value, 0),
+          rs = done.reduce((s, c) => s + c.value, 0);
+        document.getElementById("sr-total").textContent = "R$ " + fmt(total);
+        document.getElementById("sr-received").textContent = "R$ " + fmt(rs);
+        document.getElementById("sr-pending").textContent =
+          "R$ " + fmt(total - rs);
+        document.getElementById("sr-count").textContent = list.length;
+        document.getElementById("foot-receber").textContent = fmt(total);
+      }
+
+      function renderHonorarios() {
+        const list = store.honorarios;
+        const tbody = document.getElementById("tbody-honorarios");
+        const empty = document.getElementById("hon-empty");
+        const tableContainer = document.getElementById("hon-table-container");
+        document.getElementById("badge-honorarios").textContent = list.length;
+        document.getElementById("badge-honorarios").style.display = list.length
+          ? ""
+          : "none";
+        if (!list.length) {
+          tbody.innerHTML = "";
+          tableContainer.style.display = "none";
+          empty.style.display = "block";
+          document.getElementById("sh-total").textContent = "R$ 0,00";
+          document.getElementById("sh-taques").textContent = "R$ 0,00";
+          document.getElementById("sh-count").textContent = "0";
+          return;
+        }
+        empty.style.display = "none";
+        tableContainer.style.display = "";
+        const total = list.reduce((s, h) => s + (h.value || 0), 0);
+        const taquesTotal = list.reduce((s, h) => s + (h.taquesValue || 0), 0);
+        document.getElementById("sh-total").textContent = "R$ " + fmt(total);
+        document.getElementById("sh-taques").textContent =
+          "R$ " + fmt(taquesTotal);
+        document.getElementById("sh-count").textContent = list.length;
+        tbody.innerHTML = "";
+        list.forEach((h, i) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${fmtDateFull(h.date)}</td>
+      <td><strong>${h.client}</strong><span class="detail-sub">${h.title}</span><span class="detail-sub" style="font-style:italic;font-size:0.75rem">${h.obs || ""}</span></td>
+      <td class="col-status">${h.situacao || "-"}</td>
+      <td class="col-value">${fmt(h.value || 0)}</td>
+      <td class="col-value">${fmt(h.taquesValue || 0)}</td>
       <td class="col-actions">
         <button class="btn btn-blue btn-sm" style="margin-bottom:4px;width:100%" onclick="convertHonorario(${i})">Definir</button>
         <button class="btn btn-red btn-sm" style="width:100%" onclick="removeHonorario(${i})">Remover</button>
       </td>`;
-    tbody.appendChild(tr);
-  });
-  document.getElementById('foot-hon-total').textContent=fmt(total);
-  document.getElementById('foot-hon-taques').textContent=fmt(taquesTotal);
-}
+          tbody.appendChild(tr);
+        });
+        document.getElementById("foot-hon-total").textContent = fmt(total);
+        document.getElementById("foot-hon-taques").textContent =
+          fmt(taquesTotal);
+      }
 
-function toggle(mod,idx){const list=getList(mod);list[idx].paid=!list[idx].paid;save();render()}
-function closeModal(id){document.getElementById('overlay-'+id).classList.remove('active')}
+      function toggle(mod, idx) {
+        const list = getList(mod);
+        list[idx].paid = !list[idx].paid;
+        save();
+        render();
+      }
+      function closeModal(id) {
+        document.getElementById("overlay-" + id).classList.remove("active");
+      }
 
-// ── Modal: Pagar ──
-function openModalPagar(){const v=view.pagar;
-  document.getElementById('inp-p-date').value=v.y+'-'+String(v.m+1).padStart(2,'0')+'-01';
-  document.getElementById('inp-p-title').value='';document.getElementById('inp-p-value').value='';
-  document.getElementById('overlay-pagar').classList.add('active');setTimeout(()=>document.getElementById('inp-p-title').focus(),100)}
-function addContaPagar(){const d=document.getElementById('inp-p-date').value,t=document.getElementById('inp-p-title').value.trim(),rv=document.getElementById('inp-p-value').value.trim();
-  if(!d||!t||!rv){alert('Preencha todos os campos.');return}const val=parseVal(rv);if(isNaN(val)||val<=0){alert('Valor invalido.');return}
-  const[y,m]=d.split('-');const k=y+'-'+m;if(!store.pagar[k])store.pagar[k]=[];
-  store.pagar[k].push({date:d,title:t,value:val,paid:false});view.pagar.y=parseInt(y);view.pagar.m=parseInt(m)-1;save();closeModal('pagar');render()}
+      // ── Modal: Pagar ──
+      function openModalPagar() {
+        const v = view.pagar;
+        document.getElementById("inp-p-date").value =
+          v.y + "-" + String(v.m + 1).padStart(2, "0") + "-01";
+        document.getElementById("inp-p-title").value = "";
+        document.getElementById("inp-p-value").value = "";
+        document.getElementById("overlay-pagar").classList.add("active");
+        setTimeout(() => document.getElementById("inp-p-title").focus(), 100);
+      }
+      function addContaPagar() {
+        const d = document.getElementById("inp-p-date").value,
+          t = document.getElementById("inp-p-title").value.trim(),
+          rv = document.getElementById("inp-p-value").value.trim();
+        if (!d || !t || !rv) {
+          alert("Preencha todos os campos.");
+          return;
+        }
+        const val = parseVal(rv);
+        if (isNaN(val) || val <= 0) {
+          alert("Valor invalido.");
+          return;
+        }
+        const [y, m] = d.split("-");
+        const k = y + "-" + m;
+        if (!store.pagar[k]) store.pagar[k] = [];
+        store.pagar[k].push({ date: d, title: t, value: val, paid: false });
+        view.pagar.y = parseInt(y);
+        view.pagar.m = parseInt(m) - 1;
+        save();
+        closeModal("pagar");
+        render();
+      }
 
-// ── Modal: Simples ──
-function openModalReceber(tipo){if(tipo==='simples'){const v=view.receber;
-  document.getElementById('inp-s-date').value=v.y+'-'+String(v.m+1).padStart(2,'0')+'-01';
-  document.getElementById('inp-s-value').value='';document.getElementById('inp-s-client').value='';document.getElementById('inp-s-title').value='';
-  document.getElementById('overlay-simples').classList.add('active');setTimeout(()=>document.getElementById('inp-s-client').focus(),100)}else{openComplexaModal()}}
-function addSimples(){const d=document.getElementById('inp-s-date').value,cl=document.getElementById('inp-s-client').value.trim(),t=document.getElementById('inp-s-title').value.trim(),rv=document.getElementById('inp-s-value').value.trim();
-  if(!d||!cl||!t||!rv){alert('Preencha todos os campos.');return}const val=parseVal(rv);if(isNaN(val)||val<=0){alert('Valor invalido.');return}
-  const[y,m]=d.split('-');const k=y+'-'+m;if(!store.receber[k])store.receber[k]=[];
-  store.receber[k].push({date:d,title:t,value:val,paid:false,client:cl,type:'simples'});view.receber.y=parseInt(y);view.receber.m=parseInt(m)-1;save();closeModal('simples');render()}
+      // ── Modal: Simples ──
+      function openModalReceber(tipo) {
+        if (tipo === "simples") {
+          const v = view.receber;
+          document.getElementById("inp-s-date").value =
+            v.y + "-" + String(v.m + 1).padStart(2, "0") + "-01";
+          document.getElementById("inp-s-value").value = "";
+          document.getElementById("inp-s-client").value = "";
+          document.getElementById("inp-s-title").value = "";
+          document.getElementById("overlay-simples").classList.add("active");
+          setTimeout(
+            () => document.getElementById("inp-s-client").focus(),
+            100,
+          );
+        } else {
+          openComplexaModal();
+        }
+      }
+      function addSimples() {
+        const d = document.getElementById("inp-s-date").value,
+          cl = document.getElementById("inp-s-client").value.trim(),
+          t = document.getElementById("inp-s-title").value.trim(),
+          rv = document.getElementById("inp-s-value").value.trim();
+        if (!d || !cl || !t || !rv) {
+          alert("Preencha todos os campos.");
+          return;
+        }
+        const val = parseVal(rv);
+        if (isNaN(val) || val <= 0) {
+          alert("Valor invalido.");
+          return;
+        }
+        const [y, m] = d.split("-");
+        const k = y + "-" + m;
+        if (!store.receber[k]) store.receber[k] = [];
+        store.receber[k].push({
+          date: d,
+          title: t,
+          value: val,
+          paid: false,
+          client: cl,
+          type: "simples",
+        });
+        view.receber.y = parseInt(y);
+        view.receber.m = parseInt(m) - 1;
+        save();
+        closeModal("simples");
+        render();
+      }
 
-// ── Modal: Complexa ──
-function openComplexaModal(prefill){const v=view.receber;const p=prefill||{};
-  document.getElementById('inp-c-client').value=p.client||'';document.getElementById('inp-c-title').value=p.title||'';
-  document.getElementById('inp-c-total').value=p.value?fmt(p.value):'';document.getElementById('inp-c-parcelas').value='15';
-  document.getElementById('inp-c-date').value=p.date||v.y+'-'+String(v.m+1).padStart(2,'0')+'-10';
-  document.getElementById('inp-c-dia').value='10';document.getElementById('inp-c-forma').value='Boleto';
-  document.getElementById('inp-c-vparcela').value='';document.getElementById('inp-c-obs').value=p.obs||'';
-  distRows=[{name:'Paulo Simons',value:'1000'},{name:'Gilberto',value:'500'},{name:'Lenon',value:'500'}];
-  renderDist();calcComplex();document.getElementById('overlay-complexa').classList.add('active');
-  setTimeout(()=>document.getElementById('inp-c-client').focus(),100)}
-function addDistRow(){distRows.push({name:'',value:''});renderDist();calcComplex()}
-function removeDistRow(i){distRows.splice(i,1);renderDist();calcComplex()}
-function renderDist(){const c=document.getElementById('dist-container');c.innerHTML='';
-  distRows.forEach((r,i)=>{c.innerHTML+=`<div class="dist-row"><input class="dist-name" placeholder="Nome" value="${r.name}" oninput="distRows[${i}].name=this.value"><input class="dist-val" placeholder="Valor" value="${r.value}" inputmode="decimal" oninput="distRows[${i}].value=this.value;calcComplex()"><button class="dist-remove" onclick="removeDistRow(${i})">&#10005;</button></div>`})}
-function calcComplex(){const tr=document.getElementById('inp-c-total').value.trim();const np=parseInt(document.getElementById('inp-c-parcelas').value)||1;
-  const tv=tr?parseVal(tr):0;const vp=tv>0?Math.round((tv/np)*100)/100:0;
-  document.getElementById('inp-c-vparcela').value=vp>0?'R$ '+fmt(vp):'';
-  let dt=0;distRows.forEach(r=>{const v=r.value?parseVal(r.value):0;if(!isNaN(v))dt+=v});
-  const esc=vp-dt;const el=document.getElementById('dist-summary');if(vp<=0){el.innerHTML='';return}
-  let h='<div class="line"><span>Valor da parcela</span><span>R$ '+fmt(vp)+'</span></div>';
-  distRows.forEach(r=>{const v=r.value?parseVal(r.value):0;if(r.name)h+='<div class="line"><span>(-) '+r.name+'</span><span>R$ '+fmt(isNaN(v)?0:v)+'</span></div>'});
-  h+='<div class="line total '+(esc>=0?'ok':'warn')+'"><span>Saldo escritorio</span><span>R$ '+fmt(esc)+'</span></div>';el.innerHTML=h}
-function addComplexa(){const cl=document.getElementById('inp-c-client').value.trim(),ti=document.getElementById('inp-c-title').value.trim(),
-  tr=document.getElementById('inp-c-total').value.trim(),np=parseInt(document.getElementById('inp-c-parcelas').value)||1,
-  dv=document.getElementById('inp-c-date').value,dia=parseInt(document.getElementById('inp-c-dia').value)||10,
-  fo=document.getElementById('inp-c-forma').value,ob=document.getElementById('inp-c-obs').value.trim();
-  if(!cl||!ti||!tr||!dv){alert('Preencha todos os campos obrigatorios.');return}
-  const tv=parseVal(tr);if(isNaN(tv)||tv<=0){alert('Valor total invalido.');return}const vp=Math.round((tv/np)*100)/100;
-  const dp=[];for(const r of distRows){if(!r.name.trim())continue;const v=r.value?parseVal(r.value):0;if(isNaN(v)||v<=0){alert('Valor invalido para: '+r.name);return}dp.push({name:r.name.trim(),value:v,type:'repasse'})}
-  const cid='contract-'+Date.now();const[sy,sm]=dv.split('-');const sY=parseInt(sy),sM=parseInt(sm);
-  for(let i=0;i<np;i++){const tM=sM-1+i;const yr=sY+Math.floor(tM/12);const mo=(tM%12)+1;
-    const dd=String(Math.min(dia,28)).padStart(2,'0'),mm=String(mo).padStart(2,'0'),ds=yr+'-'+mm+'-'+dd,k=yr+'-'+mm,sx=' ('+(i+1)+'/'+np+')';
-    const pv=i===np-1?Math.round((tv-vp*(np-1))*100)/100:vp;
-    if(!store.receber[k])store.receber[k]=[];store.receber[k].push({date:ds,title:ti+sx,value:pv,paid:false,client:cl,type:'complexa',forma:fo,obs:ob,contractId:cid,dist:dp.map(d=>({...d}))});
-    if(!store.pagar[k])store.pagar[k]=[];dp.forEach(d=>{store.pagar[k].push({date:ds,title:'Repasse '+d.name+' - '+cl+sx,value:d.value,paid:false,auto:true,contractId:cid})})}
-  view.receber.y=parseInt(sy);view.receber.m=parseInt(sm)-1;save();closeModal('complexa');switchPage('receber');render()}
+      // ── Modal: Complexa ──
+      function openComplexaModal(prefill) {
+        const v = view.receber;
+        const p = prefill || {};
+        document.getElementById("inp-c-client").value = p.client || "";
+        document.getElementById("inp-c-title").value = p.title || "";
+        document.getElementById("inp-c-total").value = p.value
+          ? fmt(p.value)
+          : "";
+        document.getElementById("inp-c-parcelas").value = "15";
+        document.getElementById("inp-c-date").value =
+          p.date || v.y + "-" + String(v.m + 1).padStart(2, "0") + "-10";
+        document.getElementById("inp-c-dia").value = "10";
+        document.getElementById("inp-c-forma").value = "Boleto";
+        document.getElementById("inp-c-vparcela").value = "";
+        document.getElementById("inp-c-obs").value = p.obs || "";
+        distRows = [
+          { name: "Paulo Simons", value: "1000" },
+          { name: "Gilberto", value: "500" },
+          { name: "Lenon", value: "500" },
+        ];
+        renderDist();
+        calcComplex();
+        document.getElementById("overlay-complexa").classList.add("active");
+        setTimeout(() => document.getElementById("inp-c-client").focus(), 100);
+      }
+      function addDistRow() {
+        distRows.push({ name: "", value: "" });
+        renderDist();
+        calcComplex();
+      }
+      function removeDistRow(i) {
+        distRows.splice(i, 1);
+        renderDist();
+        calcComplex();
+      }
+      function renderDist() {
+        const c = document.getElementById("dist-container");
+        c.innerHTML = "";
+        distRows.forEach((r, i) => {
+          c.innerHTML += `<div class="dist-row"><input class="dist-name" placeholder="Nome" value="${r.name}" oninput="distRows[${i}].name=this.value"><input class="dist-val" placeholder="Valor" value="${r.value}" inputmode="decimal" oninput="distRows[${i}].value=this.value;calcComplex()"><button class="dist-remove" onclick="removeDistRow(${i})">&#10005;</button></div>`;
+        });
+      }
+      function calcComplex() {
+        const tr = document.getElementById("inp-c-total").value.trim();
+        const np =
+          parseInt(document.getElementById("inp-c-parcelas").value) || 1;
+        const tv = tr ? parseVal(tr) : 0;
+        const vp = tv > 0 ? Math.round((tv / np) * 100) / 100 : 0;
+        document.getElementById("inp-c-vparcela").value =
+          vp > 0 ? "R$ " + fmt(vp) : "";
+        let dt = 0;
+        distRows.forEach((r) => {
+          const v = r.value ? parseVal(r.value) : 0;
+          if (!isNaN(v)) dt += v;
+        });
+        const esc = vp - dt;
+        const el = document.getElementById("dist-summary");
+        if (vp <= 0) {
+          el.innerHTML = "";
+          return;
+        }
+        let h =
+          '<div class="line"><span>Valor da parcela</span><span>R$ ' +
+          fmt(vp) +
+          "</span></div>";
+        distRows.forEach((r) => {
+          const v = r.value ? parseVal(r.value) : 0;
+          if (r.name)
+            h +=
+              '<div class="line"><span>(-) ' +
+              r.name +
+              "</span><span>R$ " +
+              fmt(isNaN(v) ? 0 : v) +
+              "</span></div>";
+        });
+        h +=
+          '<div class="line total ' +
+          (esc >= 0 ? "ok" : "warn") +
+          '"><span>Saldo escritorio</span><span>R$ ' +
+          fmt(esc) +
+          "</span></div>";
+        el.innerHTML = h;
+      }
+      function addComplexa() {
+        const cl = document.getElementById("inp-c-client").value.trim(),
+          ti = document.getElementById("inp-c-title").value.trim(),
+          tr = document.getElementById("inp-c-total").value.trim(),
+          np = parseInt(document.getElementById("inp-c-parcelas").value) || 1,
+          dv = document.getElementById("inp-c-date").value,
+          dia = parseInt(document.getElementById("inp-c-dia").value) || 10,
+          fo = document.getElementById("inp-c-forma").value,
+          ob = document.getElementById("inp-c-obs").value.trim();
+        if (!cl || !ti || !tr || !dv) {
+          alert("Preencha todos os campos obrigatorios.");
+          return;
+        }
+        const tv = parseVal(tr);
+        if (isNaN(tv) || tv <= 0) {
+          alert("Valor total invalido.");
+          return;
+        }
+        const vp = Math.round((tv / np) * 100) / 100;
+        const dp = [];
+        for (const r of distRows) {
+          if (!r.name.trim()) continue;
+          const v = r.value ? parseVal(r.value) : 0;
+          if (isNaN(v) || v <= 0) {
+            alert("Valor invalido para: " + r.name);
+            return;
+          }
+          dp.push({ name: r.name.trim(), value: v, type: "repasse" });
+        }
+        const cid = "contract-" + Date.now();
+        const [sy, sm] = dv.split("-");
+        const sY = parseInt(sy),
+          sM = parseInt(sm);
+        for (let i = 0; i < np; i++) {
+          const tM = sM - 1 + i;
+          const yr = sY + Math.floor(tM / 12);
+          const mo = (tM % 12) + 1;
+          const dd = String(Math.min(dia, 28)).padStart(2, "0"),
+            mm = String(mo).padStart(2, "0"),
+            ds = yr + "-" + mm + "-" + dd,
+            k = yr + "-" + mm,
+            sx = " (" + (i + 1) + "/" + np + ")";
+          const pv =
+            i === np - 1 ? Math.round((tv - vp * (np - 1)) * 100) / 100 : vp;
+          if (!store.receber[k]) store.receber[k] = [];
+          store.receber[k].push({
+            date: ds,
+            title: ti + sx,
+            value: pv,
+            paid: false,
+            client: cl,
+            type: "complexa",
+            forma: fo,
+            obs: ob,
+            contractId: cid,
+            dist: dp.map((d) => ({ ...d })),
+          });
+          if (!store.pagar[k]) store.pagar[k] = [];
+          dp.forEach((d) => {
+            store.pagar[k].push({
+              date: ds,
+              title: "Repasse " + d.name + " - " + cl + sx,
+              value: d.value,
+              paid: false,
+              auto: true,
+              contractId: cid,
+            });
+          });
+        }
+        view.receber.y = parseInt(sy);
+        view.receber.m = parseInt(sm) - 1;
+        save();
+        closeModal("complexa");
+        switchPage("receber");
+        render();
+      }
 
-// ── Modal: Honorario ──
-function openModalHonorario(){
-  document.getElementById('inp-h-client').value='';document.getElementById('inp-h-title').value='';
-  document.getElementById('inp-h-value').value='';document.getElementById('inp-h-taques').value='';
-  document.getElementById('inp-h-date').value=TODAY_STR;
-  document.getElementById('inp-h-situacao').value='';document.getElementById('inp-h-obs').value='';
-  document.getElementById('overlay-honorario').classList.add('active');setTimeout(()=>document.getElementById('inp-h-client').focus(),100)}
-function addHonorario(){const cl=document.getElementById('inp-h-client').value.trim(),ti=document.getElementById('inp-h-title').value.trim(),
-  rv=document.getElementById('inp-h-value').value.trim(),rt=document.getElementById('inp-h-taques').value.trim(),dt=document.getElementById('inp-h-date').value,
-  sit=document.getElementById('inp-h-situacao').value.trim(),ob=document.getElementById('inp-h-obs').value.trim();
-  if(!cl||!ti){alert('Preencha cliente e descricao.');return}
-  const val=rv?parseVal(rv):0;
-  const tq=rt?parseVal(rt):0;
-  store.honorarios.push({client:cl,title:ti,value:isNaN(val)?0:val,taquesValue:isNaN(tq)?0:tq,date:dt||TODAY_STR,situacao:sit,obs:ob,createdAt:new Date().toISOString()});
-  save();closeModal('honorario');render()}
-function removeHonorario(i){if(confirm('Remover este honorario?')){store.honorarios.splice(i,1);save();render()}}
-function convertHonorario(i){const h=store.honorarios[i];openComplexaModal({client:h.client,title:h.title,value:h.value,date:h.date,obs:h.obs});
-  store.honorarios.splice(i,1);save();}
+      // ── Modal: Honorario ──
+      function openModalHonorario() {
+        document.getElementById("inp-h-client").value = "";
+        document.getElementById("inp-h-title").value = "";
+        document.getElementById("inp-h-value").value = "";
+        document.getElementById("inp-h-taques").value = "";
+        document.getElementById("inp-h-date").value = TODAY_STR;
+        document.getElementById("inp-h-situacao").value = "";
+        document.getElementById("inp-h-obs").value = "";
+        document.getElementById("overlay-honorario").classList.add("active");
+        setTimeout(() => document.getElementById("inp-h-client").focus(), 100);
+      }
+      function addHonorario() {
+        const cl = document.getElementById("inp-h-client").value.trim(),
+          ti = document.getElementById("inp-h-title").value.trim(),
+          rv = document.getElementById("inp-h-value").value.trim(),
+          rt = document.getElementById("inp-h-taques").value.trim(),
+          dt = document.getElementById("inp-h-date").value,
+          sit = document.getElementById("inp-h-situacao").value.trim(),
+          ob = document.getElementById("inp-h-obs").value.trim();
+        if (!cl || !ti) {
+          alert("Preencha cliente e descricao.");
+          return;
+        }
+        const val = rv ? parseVal(rv) : 0;
+        const tq = rt ? parseVal(rt) : 0;
+        store.honorarios.push({
+          client: cl,
+          title: ti,
+          value: isNaN(val) ? 0 : val,
+          taquesValue: isNaN(tq) ? 0 : tq,
+          date: dt || TODAY_STR,
+          situacao: sit,
+          obs: ob,
+          createdAt: new Date().toISOString(),
+        });
+        save();
+        closeModal("honorario");
+        render();
+      }
+      function removeHonorario(i) {
+        if (confirm("Remover este honorario?")) {
+          store.honorarios.splice(i, 1);
+          save();
+          render();
+        }
+      }
+      function convertHonorario(i) {
+        const h = store.honorarios[i];
+        openComplexaModal({
+          client: h.client,
+          title: h.title,
+          value: h.value,
+          date: h.date,
+          obs: h.obs,
+        });
+        store.honorarios.splice(i, 1);
+        save();
+      }
 
-// ── Keyboard ──
-document.addEventListener('keydown',function(e){if(document.querySelector('.overlay.active')){if(e.key==='Escape'){closeModal('pagar');closeModal('simples');closeModal('complexa');closeModal('honorario')}return}
-  if(e.key==='ArrowLeft'&&(curPage==='pagar'||curPage==='receber'))changeMonth(curPage,-1);
-  if(e.key==='ArrowRight'&&(curPage==='pagar'||curPage==='receber'))changeMonth(curPage,1)});
+      // ── Keyboard ──
+      document.addEventListener("keydown", function (e) {
+        if (document.querySelector(".overlay.active")) {
+          if (e.key === "Escape") {
+            closeModal("pagar");
+            closeModal("simples");
+            closeModal("complexa");
+            closeModal("honorario");
+          }
+          return;
+        }
+        if (
+          e.key === "ArrowLeft" &&
+          (curPage === "pagar" || curPage === "receber")
+        )
+          changeMonth(curPage, -1);
+        if (
+          e.key === "ArrowRight" &&
+          (curPage === "pagar" || curPage === "receber")
+        )
+          changeMonth(curPage, 1);
+      });
 
-// ── Exposicao Global ──
-window.switchPage = switchPage;
-window.changeMonth = changeMonth;
-window.openModalPagar = openModalPagar;
-window.addContaPagar = addContaPagar;
-window.openModalReceber = openModalReceber;
-window.addSimples = addSimples;
-window.openComplexaModal = openComplexaModal;
-window.addDistRow = addDistRow;
-window.removeDistRow = removeDistRow;
-window.calcComplex = calcComplex;
-window.addComplexa = addComplexa;
-window.openModalHonorario = openModalHonorario;
-window.addHonorario = addHonorario;
-window.removeHonorario = removeHonorario;
-window.convertHonorario = convertHonorario;
-window.exportBackup = exportBackup;
-window.importBackup = importBackup;
-window.toggle = toggle;
-window.markVencidaPaid = markVencidaPaid;
-window.closeModal = closeModal;
+      // ── Exposicao Global ──
+      window.switchPage = switchPage;
+      window.changeMonth = changeMonth;
+      window.openModalPagar = openModalPagar;
+      window.addContaPagar = addContaPagar;
+      window.openModalReceber = openModalReceber;
+      window.addSimples = addSimples;
+      window.openComplexaModal = openComplexaModal;
+      window.addDistRow = addDistRow;
+      window.removeDistRow = removeDistRow;
+      window.calcComplex = calcComplex;
+      window.addComplexa = addComplexa;
+      window.openModalHonorario = openModalHonorario;
+      window.addHonorario = addHonorario;
+      window.removeHonorario = removeHonorario;
+      window.convertHonorario = convertHonorario;
+      window.exportBackup = exportBackup;
+      window.importBackup = importBackup;
+      window.toggle = toggle;
+      window.markVencidaPaid = markVencidaPaid;
+      window.closeModal = closeModal;
 
-// Initialize
-load();
-</script>
-</body>
+      // Initialize
+      load();
+    </script>
+  </body>
 </html>
