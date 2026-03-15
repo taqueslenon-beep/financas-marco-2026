@@ -32,6 +32,10 @@
         bottom: 0;
         z-index: 50;
         overflow-y: auto;
+        transition: background-color 0.3s;
+      }
+      body.theme-pf .sidebar {
+        background: #1e3a5f;
       }
       .sidebar-logo {
         padding: 0 20px 24px;
@@ -40,6 +44,40 @@
         color: #EAE0D5;
         border-bottom: 1px solid #1a2925;
         margin-bottom: 8px;
+        transition: border-color 0.3s;
+      }
+      body.theme-pf .sidebar-logo {
+        border-bottom-color: #152b47;
+      }
+      .workspace-selector {
+        padding: 0 20px 16px;
+      }
+      .ws-toggle {
+        display: flex;
+        gap: 4px;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 4px;
+        border-radius: 8px;
+      }
+      .ws-btn {
+        flex: 1;
+        padding: 8px 0;
+        border: none;
+        background: transparent;
+        color: #D6CCC1;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .ws-btn.active {
+        background: #EAE0D5;
+        color: #223631;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      }
+      body.theme-pf .ws-btn.active {
+        color: #1e3a5f;
       }
       .sidebar-section {
         padding: 16px 16px 8px;
@@ -92,6 +130,10 @@
       .sidebar-tools {
         padding: 10px 16px 18px;
         border-top: 1px solid #1a2925;
+        transition: border-color 0.3s;
+      }
+      body.theme-pf .sidebar-tools {
+        border-top-color: #152b47;
       }
       .btn-sidebar {
         width: 100%;
@@ -150,9 +192,16 @@
       .btn-primary {
         background: #223631;
         color: #fff;
+        transition: background-color 0.3s;
       }
       .btn-primary:hover {
         background: #1a2925;
+      }
+      body.theme-pf .btn-primary {
+        background: #1e3a5f;
+      }
+      body.theme-pf .btn-primary:hover {
+        background: #152b47;
       }
       .btn-green {
         background: #059669;
@@ -287,6 +336,10 @@
       thead {
         background: #223631;
         color: #fff;
+        transition: background-color 0.3s;
+      }
+      body.theme-pf thead {
+        background: #1e3a5f;
       }
       .receber-table thead {
         background: #1e40af;
@@ -689,6 +742,12 @@
   <body>
     <aside class="sidebar">
       <div class="sidebar-logo">Gestao Financeira</div>
+      <div class="workspace-selector">
+        <div class="ws-toggle">
+          <button class="ws-btn active" id="btn-ws-pj" onclick="changeWorkspace('pj')">Escritório (PJ)</button>
+          <button class="ws-btn" id="btn-ws-pf" onclick="changeWorkspace('pf')">Pessoal (PF)</button>
+        </div>
+      </div>
       <div class="sidebar-section">Modulos</div>
       <div
         class="sidebar-item"
@@ -703,14 +762,14 @@
         onclick="switchPage('pagar')"
         id="nav-pagar"
       >
-        <span class="icon">&#128228;</span> Contas a Pagar
+        <span class="icon">&#128184;</span> Contas a Pagar
       </div>
       <div
         class="sidebar-item"
         onclick="switchPage('receber')"
         id="nav-receber"
       >
-        <span class="icon">&#128229;</span> Contas a Receber
+        <span class="icon">&#128176;</span> Contas a Receber
       </div>
       <div
         class="sidebar-item"
@@ -1256,8 +1315,24 @@
 
       let curPage = "pagar";
       let view = { pagar: { y: 2026, m: 2 }, receber: { y: 2026, m: 2 } };
-      let store = { pagar: {}, receber: {}, honorarios: [] };
+      let store = { pagar: {}, receber: {}, honorarios: [], pagarPF: {}, receberPF: {} };
       let distRows = [];
+      let currentWorkspace = "pj";
+
+      function changeWorkspace(ws) {
+        currentWorkspace = ws;
+        document.body.className = ws === "pf" ? "theme-pf" : "";
+        document.getElementById("nav-honorarios").style.display = ws === "pf" ? "none" : "flex";
+        
+        document.getElementById("btn-ws-pj").classList.toggle("active", ws === "pj");
+        document.getElementById("btn-ws-pf").classList.toggle("active", ws === "pf");
+
+        if (ws === "pf" && curPage === "honorarios") {
+          switchPage("pagar");
+        } else {
+          render();
+        }
+      }
 
       function mkey(y, m) {
         return y + "-" + String(m + 1).padStart(2, "0");
@@ -1290,17 +1365,16 @@
       }
 
       function defaultStore() {
-        return { pagar: {}, receber: {}, honorarios: [] };
+        return { pagar: {}, receber: {}, honorarios: [], pagarPF: {}, receberPF: {} };
       }
       function ensureStoreShape(data) {
         const safe = data && typeof data === "object" ? data : {};
         return {
           pagar: safe.pagar && typeof safe.pagar === "object" ? safe.pagar : {},
-          receber:
-            safe.receber && typeof safe.receber === "object"
-              ? safe.receber
-              : {},
+          receber: safe.receber && typeof safe.receber === "object" ? safe.receber : {},
           honorarios: Array.isArray(safe.honorarios) ? safe.honorarios : [],
+          pagarPF: safe.pagarPF && typeof safe.pagarPF === "object" ? safe.pagarPF : {},
+          receberPF: safe.receberPF && typeof safe.receberPF === "object" ? safe.receberPF : {},
         };
       }
       function getBackupCount() {
@@ -1522,8 +1596,9 @@
       function getList(mod) {
         const v = view[mod];
         const k = mkey(v.y, v.m);
-        if (!store[mod][k]) store[mod][k] = [];
-        return store[mod][k];
+        const storeKey = mod + (currentWorkspace === "pf" ? "PF" : "");
+        if (!store[storeKey][k]) store[storeKey][k] = [];
+        return store[storeKey][k];
       }
 
       // ── Seed demo (somente com ?demo=1) ──
@@ -1746,8 +1821,9 @@
       // ── Vencidas: scan ALL pagar data ──
       function getVencidas() {
         const result = [];
-        for (const k in store.pagar) {
-          store.pagar[k].forEach((c, idx) => {
+        const storeKey = "pagar" + (currentWorkspace === "pf" ? "PF" : "");
+        for (const k in store[storeKey]) {
+          store[storeKey][k].forEach((c, idx) => {
             if (!c.paid && c.date < TODAY_STR) {
               result.push({
                 ...c,
@@ -1851,7 +1927,8 @@
       }
 
       function markVencidaPaid(mk, idx) {
-        store.pagar[mk][idx].paid = true;
+        const storeKey = "pagar" + (currentWorkspace === "pf" ? "PF" : "");
+        store[storeKey][mk][idx].paid = true;
         save();
         render();
       }
@@ -2015,8 +2092,9 @@
         }
         const [y, m] = d.split("-");
         const k = y + "-" + m;
-        if (!store.pagar[k]) store.pagar[k] = [];
-        store.pagar[k].push({ date: d, title: t, value: val, paid: false });
+        const storeKey = "pagar" + (currentWorkspace === "pf" ? "PF" : "");
+        if (!store[storeKey][k]) store[storeKey][k] = [];
+        store[storeKey][k].push({ date: d, title: t, value: val, paid: false });
         view.pagar.y = parseInt(y);
         view.pagar.m = parseInt(m) - 1;
         save();
@@ -2058,8 +2136,9 @@
         }
         const [y, m] = d.split("-");
         const k = y + "-" + m;
-        if (!store.receber[k]) store.receber[k] = [];
-        store.receber[k].push({
+        const storeKey = "receber" + (currentWorkspace === "pf" ? "PF" : "");
+        if (!store[storeKey][k]) store[storeKey][k] = [];
+        store[storeKey][k].push({
           date: d,
           title: t,
           value: val,
@@ -2209,8 +2288,11 @@
             value: Math.round((d.value / np) * 100) / 100
           }));
 
-          if (!store.receber[k]) store.receber[k] = [];
-          store.receber[k].push({
+          const storeKeyRec = "receber" + (currentWorkspace === "pf" ? "PF" : "");
+          const storeKeyPag = "pagar" + (currentWorkspace === "pf" ? "PF" : "");
+
+          if (!store[storeKeyRec][k]) store[storeKeyRec][k] = [];
+          store[storeKeyRec][k].push({
             date: ds,
             title: ti + sx,
             value: pv,
@@ -2222,9 +2304,9 @@
             contractId: cid,
             dist: parcelaDp,
           });
-          if (!store.pagar[k]) store.pagar[k] = [];
+          if (!store[storeKeyPag][k]) store[storeKeyPag][k] = [];
           parcelaDp.forEach((d) => {
-            store.pagar[k].push({
+            store[storeKeyPag][k].push({
               date: ds,
               title: "Repasse " + d.name + " - " + cl + sx,
               value: d.value,
@@ -2326,6 +2408,7 @@
       });
 
       // ── Exposicao Global ──
+      window.changeWorkspace = changeWorkspace;
       window.switchPage = switchPage;
       window.changeMonth = changeMonth;
       window.openModalPagar = openModalPagar;
