@@ -58,6 +58,7 @@
         background: rgba(0, 0, 0, 0.2);
         padding: 4px;
         border-radius: 8px;
+        flex-direction: column;
       }
       .ws-btn {
         flex: 1;
@@ -78,6 +79,9 @@
       }
       body.theme-pf .ws-btn.active {
         color: #1e3a5f;
+      }
+      body.theme-all .ws-btn.active {
+        color: #4a5568;
       }
       .sidebar-section {
         padding: 16px 16px 8px;
@@ -202,6 +206,24 @@
       }
       body.theme-pf .btn-primary:hover {
         background: #152b47;
+      }
+      body.theme-all .sidebar {
+        background: #4a5568;
+      }
+      body.theme-all .sidebar-logo {
+        border-bottom-color: #2d3748;
+      }
+      body.theme-all .sidebar-tools {
+        border-top-color: #2d3748;
+      }
+      body.theme-all .btn-primary {
+        background: #4a5568;
+      }
+      body.theme-all .btn-primary:hover {
+        background: #2d3748;
+      }
+      body.theme-all thead {
+        background: #4a5568;
       }
       .btn-green {
         background: #059669;
@@ -737,6 +759,61 @@
       .dist-summary .line.warn {
         color: #dc2626;
       }
+
+      /* ── Dashboard ── */
+      .dash-section {
+        background: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      }
+      .dash-section h2 {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .dash-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+      }
+      .dash-card {
+        padding: 14px 16px;
+        border-radius: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+      }
+      .dash-card .label {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+      .dash-card .val {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .dash-card.danger { border-left: 4px solid #ef4444; }
+      .dash-card.danger .val { color: #dc2626; }
+      .dash-card.warn { border-left: 4px solid #f59e0b; }
+      .dash-card.warn .val { color: #d97706; }
+      .dash-card.success { border-left: 4px solid #10b981; }
+      .dash-card.success .val { color: #059669; }
+      .dash-card.info { border-left: 4px solid #3b82f6; }
+      .dash-card.info .val { color: #2563eb; }
+      .dash-card.highlight {
+        background: #fffbeb;
+        border-color: #fcd34d;
+        border-left: 4px solid #f59e0b;
+      }
+      .dash-card.highlight .val { color: #b45309; }
     </style>
   </head>
   <body>
@@ -744,11 +821,20 @@
       <div class="sidebar-logo">Gestao Financeira</div>
       <div class="workspace-selector">
         <div class="ws-toggle">
+          <button class="ws-btn" id="btn-ws-all" onclick="changeWorkspace('all')">Visão Geral</button>
           <button class="ws-btn active" id="btn-ws-pj" onclick="changeWorkspace('pj')">Escritório (PJ)</button>
           <button class="ws-btn" id="btn-ws-pf" onclick="changeWorkspace('pf')">Pessoal (PF)</button>
         </div>
       </div>
       <div class="sidebar-section">Modulos</div>
+      <div
+        class="sidebar-item"
+        onclick="switchPage('dashboard')"
+        id="nav-dashboard"
+        style="display: none;"
+      >
+        <span class="icon">📊</span> Dashboard
+      </div>
       <div
         class="sidebar-item"
         onclick="switchPage('vencidas')"
@@ -803,6 +889,79 @@
     </aside>
 
     <div class="main">
+      <!-- ═══ PAGE: DASHBOARD ═══ -->
+      <div class="page" id="page-dashboard">
+        <div class="page-header">
+          <h1>Visão Geral (Dashboard)</h1>
+        </div>
+        <div class="month-nav">
+          <button id="btn-prev-d" onclick="changeMonth('dashboard', -1)">
+            &#8592;
+          </button>
+          <div class="month-label" id="month-label-d"></div>
+          <button id="btn-next-d" onclick="changeMonth('dashboard', 1)">
+            &#8594;
+          </button>
+        </div>
+
+        <div class="dash-section">
+          <h2><span>Contas Vencidas (Total Histórico)</span> <span style="font-weight:700; color:#dc2626;" id="dash-vencidas-total">R$ 0,00</span></h2>
+          <div class="dash-grid">
+            <div class="dash-card danger">
+              <div class="label">Escritório (PJ)</div>
+              <div class="val" id="dash-vencidas-pj">R$ 0,00</div>
+            </div>
+            <div class="dash-card danger">
+              <div class="label">Pessoal (PF)</div>
+              <div class="val" id="dash-vencidas-pf">R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-section">
+          <h2><span>Contas a Pagar (Mês Atual)</span> <span style="font-weight:700;" id="dash-pagar-total">R$ 0,00</span></h2>
+          <div class="dash-grid">
+            <div class="dash-card warn">
+              <div class="label">Pendente Geral</div>
+              <div class="val" id="dash-pagar-pendente">R$ 0,00</div>
+            </div>
+            <div class="dash-card success">
+              <div class="label">Pago Geral</div>
+              <div class="val" id="dash-pagar-pago">R$ 0,00</div>
+            </div>
+            <div class="dash-card">
+              <div class="label">Total PJ</div>
+              <div class="val" id="dash-pagar-pj">R$ 0,00</div>
+            </div>
+            <div class="dash-card">
+              <div class="label">Total PF</div>
+              <div class="val" id="dash-pagar-pf">R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-section">
+          <h2><span>Contas a Receber (Mês Atual)</span> <span style="font-weight:700; color:#2563eb;" id="dash-receber-total">R$ 0,00</span></h2>
+          <div class="dash-grid">
+            <div class="dash-card info">
+              <div class="label">Receber PJ</div>
+              <div class="val" id="dash-receber-pj">R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-section">
+          <h2>Pró-labore Mínimo Pendente</h2>
+          <p style="font-size:0.85rem; color:#64748b; margin-bottom:12px;">(Soma das contas vencidas e a pagar pendentes da Pessoa Física)</p>
+          <div class="dash-grid">
+            <div class="dash-card highlight">
+              <div class="label">Valor a transferir (PF)</div>
+              <div class="val" id="dash-prolabore">R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ═══ PAGE: VENCIDAS ═══ -->
       <div class="page" id="page-vencidas">
         <div class="page-header">
@@ -1314,20 +1473,30 @@
         String(TODAY.getDate()).padStart(2, "0");
 
       let curPage = "pagar";
-      let view = { pagar: { y: 2026, m: 2 }, receber: { y: 2026, m: 2 } };
+      let view = { pagar: { y: 2026, m: 2 }, receber: { y: 2026, m: 2 }, dashboard: { y: 2026, m: 2 } };
       let store = { pagar: {}, receber: {}, honorarios: [], pagarPF: {}, receberPF: {} };
       let distRows = [];
       let currentWorkspace = "pj";
 
       function changeWorkspace(ws) {
         currentWorkspace = ws;
-        document.body.className = ws === "pf" ? "theme-pf" : "";
-        document.getElementById("nav-honorarios").style.display = ws === "pf" ? "none" : "flex";
+        document.body.className = ws === "pf" ? "theme-pf" : ws === "all" ? "theme-all" : "";
         
+        document.getElementById("nav-honorarios").style.display = (ws === "pf" || ws === "all") ? "none" : "flex";
+        document.getElementById("nav-pagar").style.display = ws === "all" ? "none" : "flex";
+        document.getElementById("nav-receber").style.display = ws === "all" ? "none" : "flex";
+        document.getElementById("nav-vencidas").style.display = ws === "all" ? "none" : "flex";
+        document.getElementById("nav-dashboard").style.display = ws === "all" ? "flex" : "none";
+        
+        document.getElementById("btn-ws-all").classList.toggle("active", ws === "all");
         document.getElementById("btn-ws-pj").classList.toggle("active", ws === "pj");
         document.getElementById("btn-ws-pf").classList.toggle("active", ws === "pf");
 
-        if (ws === "pf" && curPage === "honorarios") {
+        if (ws === "all") {
+          switchPage("dashboard");
+        } else if (curPage === "honorarios" && ws === "pf") {
+          switchPage("pagar");
+        } else if (curPage === "dashboard" && ws !== "all") {
           switchPage("pagar");
         } else {
           render();
@@ -1912,13 +2081,19 @@
       }
       function updateMonthNav(mod) {
         const v = view[mod];
-        const s = mod === "pagar" ? "p" : "r";
-        document.getElementById("month-label-" + s).textContent =
-          MONTHS[v.m] + " " + v.y;
-        document.getElementById("btn-prev-" + s).disabled =
-          v.y === MIN_Y && v.m === MIN_M;
-        document.getElementById("btn-next-" + s).disabled =
-          v.y === MAX_Y && v.m === MAX_M;
+        let s = "";
+        if (mod === "pagar") s = "p";
+        else if (mod === "receber") s = "r";
+        else if (mod === "dashboard") s = "d";
+        
+        const labelEl = document.getElementById("month-label-" + s);
+        if(labelEl) labelEl.textContent = MONTHS[v.m] + " " + v.y;
+        
+        const btnPrev = document.getElementById("btn-prev-" + s);
+        if(btnPrev) btnPrev.disabled = v.y === MIN_Y && v.m === MIN_M;
+        
+        const btnNext = document.getElementById("btn-next-" + s);
+        if(btnNext) btnNext.disabled = v.y === MAX_Y && v.m === MAX_M;
       }
 
       // ── Render ──
@@ -1927,11 +2102,13 @@
         renderPagar();
         renderReceber();
         renderHonorarios();
+        renderDashboard();
         const titles = {
           vencidas: "Contas Vencidas",
           pagar: "Contas a Pagar",
           receber: "Contas a Receber",
           honorarios: "Honorarios a Definir",
+          dashboard: "Visão Geral",
         };
         document.title = titles[curPage] + " - Gestao Financeira";
       }
@@ -2100,6 +2277,57 @@
         document.getElementById("foot-hon-total").textContent = fmt(total);
         document.getElementById("foot-hon-taques").textContent =
           fmt(taquesTotal);
+      }
+
+      function renderDashboard() {
+        if (curPage !== "dashboard") return;
+        updateMonthNav("dashboard");
+        const v = view.dashboard;
+        const k = mkey(v.y, v.m);
+
+        // Vencidas
+        let vencidasPjTotal = 0;
+        let vencidasPfTotal = 0;
+        for (const mk in store.pagar) {
+          store.pagar[mk].forEach(c => { if (!c.paid && c.date < TODAY_STR) vencidasPjTotal += c.value; });
+        }
+        for (const mk in store.pagarPF) {
+          store.pagarPF[mk].forEach(c => { if (!c.paid && c.date < TODAY_STR) vencidasPfTotal += c.value; });
+        }
+        document.getElementById("dash-vencidas-pj").textContent = "R$ " + fmt(vencidasPjTotal);
+        document.getElementById("dash-vencidas-pf").textContent = "R$ " + fmt(vencidasPfTotal);
+        document.getElementById("dash-vencidas-total").textContent = "R$ " + fmt(vencidasPjTotal + vencidasPfTotal);
+
+        // Pagar (Mês atual)
+        const listPj = store.pagar[k] || [];
+        const listPf = store.pagarPF[k] || [];
+        let pagarPjPend = 0, pagarPjPago = 0;
+        let pagarPfPend = 0, pagarPfPago = 0;
+        
+        listPj.forEach(c => c.paid ? pagarPjPago += c.value : pagarPjPend += c.value);
+        listPf.forEach(c => c.paid ? pagarPfPago += c.value : pagarPfPend += c.value);
+
+        const pendGeral = pagarPjPend + pagarPfPend;
+        const pagoGeral = pagarPjPago + pagarPfPago;
+        const totalPj = pagarPjPend + pagarPjPago;
+        const totalPf = pagarPfPend + pagarPfPago;
+
+        document.getElementById("dash-pagar-pj").textContent = "R$ " + fmt(totalPj);
+        document.getElementById("dash-pagar-pf").textContent = "R$ " + fmt(totalPf);
+        document.getElementById("dash-pagar-pendente").textContent = "R$ " + fmt(pendGeral);
+        document.getElementById("dash-pagar-pago").textContent = "R$ " + fmt(pagoGeral);
+        document.getElementById("dash-pagar-total").textContent = "R$ " + fmt(totalPj + totalPf);
+
+        // Receber (Mês atual PJ)
+        const listRecPj = store.receber[k] || [];
+        const totalRecPj = listRecPj.reduce((s, c) => s + c.value, 0);
+        document.getElementById("dash-receber-pj").textContent = "R$ " + fmt(totalRecPj);
+        document.getElementById("dash-receber-total").textContent = "R$ " + fmt(totalRecPj);
+
+        // Pró-labore Mínimo Pendente
+        // Contas vencidas do PF + Contas pendentes do PF no mês atual
+        const prolabore = vencidasPfTotal + pagarPfPend;
+        document.getElementById("dash-prolabore").textContent = "R$ " + fmt(prolabore);
       }
 
       function toggle(mod, idx) {
