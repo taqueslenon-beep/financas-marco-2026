@@ -853,6 +853,14 @@
       </div>
       <div
         class="sidebar-item"
+        onclick="switchPage('honorarios')"
+        id="nav-honorarios"
+      >
+        <span class="icon">&#128203;</span> Honorários a definir
+        <span class="sidebar-badge yellow" id="badge-honorarios">0</span>
+      </div>
+      <div
+        class="sidebar-item"
         onclick="switchPage('vencidas')"
         id="nav-vencidas"
       >
@@ -875,11 +883,10 @@
       </div>
       <div
         class="sidebar-item"
-        onclick="switchPage('honorarios')"
-        id="nav-honorarios"
+        onclick="switchPage('contratos')"
+        id="nav-contratos"
       >
-        <span class="icon">&#128203;</span> Hon. a Definir
-        <span class="sidebar-badge yellow" id="badge-honorarios">0</span>
+        <span class="icon">&#128209;</span> Gestão de Contratos
       </div>
       <div class="sidebar-spacer"></div>
       <div class="sidebar-section">Seguranca (Firebase)</div>
@@ -1199,6 +1206,17 @@
           Nenhum honorario pendente de definicao.
         </div>
       </div>
+
+      <!-- ═══ PAGE: GESTÃO DE CONTRATOS ═══ -->
+      <div class="page" id="page-contratos">
+        <div class="page-header">
+          <h1>Gestão de Contratos</h1>
+        </div>
+        <div class="dash-section" style="text-align: center; padding: 80px 20px;">
+          <h2 style="justify-content: center; border: none; font-size: 1.6rem; color: #64748b; margin-bottom: 10px;">🚧 Módulo em Desenvolvimento 🚧</h2>
+          <p class="dash-desc" style="font-size: 1.05rem;">Em breve você poderá visualizar e gerenciar todos os seus contratos ativos e finalizados por aqui.</p>
+        </div>
+      </div>
     </div>
 
     <!-- Modal: Conta a Pagar -->
@@ -1502,6 +1520,7 @@
         document.body.className = ws === "pf" ? "theme-pf" : ws === "all" ? "theme-all" : "";
         
         document.getElementById("nav-honorarios").style.display = (ws === "pf" || ws === "all") ? "none" : "flex";
+        document.getElementById("nav-contratos").style.display = (ws === "pf" || ws === "all") ? "none" : "flex";
         document.getElementById("nav-pagar").style.display = ws === "all" ? "none" : "flex";
         document.getElementById("nav-receber").style.display = ws === "all" ? "none" : "flex";
         document.getElementById("nav-vencidas").style.display = ws === "all" ? "none" : "flex";
@@ -1513,7 +1532,7 @@
 
         if (ws === "all") {
           switchPage("dashboard");
-        } else if (curPage === "honorarios" && ws === "pf") {
+        } else if ((curPage === "honorarios" || curPage === "contratos") && ws === "pf") {
           switchPage("pagar");
         } else if (curPage === "dashboard" && ws !== "all") {
           switchPage("pagar");
@@ -2128,8 +2147,9 @@
           receber: "Contas a Receber",
           honorarios: "Honorarios a Definir",
           dashboard: "Visão Geral",
+          contratos: "Gestão de Contratos",
         };
-        document.title = titles[curPage] + " - Gestao Financeira";
+        document.title = (titles[curPage] || "") + " - Gestao Financeira";
       }
 
       function renderVencidas() {
