@@ -769,51 +769,67 @@
         box-shadow: 0 1px 3px rgba(0,0,0,0.08);
       }
       .dash-section h2 {
-        font-size: 1.1rem;
-        color: #2c3e50;
-        margin-bottom: 15px;
-        border-bottom: 1px solid #eee;
+        font-size: 1.15rem;
+        color: #1e293b;
+        margin-bottom: 6px;
+        border-bottom: 1px solid #f1f5f9;
         padding-bottom: 8px;
         display: flex;
         justify-content: space-between;
+        align-items: center;
+      }
+      .dash-desc {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 16px;
+        line-height: 1.4;
       }
       .dash-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 16px;
       }
       .dash-card {
-        padding: 14px 16px;
+        padding: 16px 18px;
         border-radius: 8px;
         background: #f8fafc;
         border: 1px solid #e2e8f0;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .dash-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
       }
       .dash-card .label {
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         color: #64748b;
         text-transform: uppercase;
-        margin-bottom: 4px;
-        font-weight: 600;
+        margin-bottom: 6px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
       }
       .dash-card .val {
-        font-size: 1.3rem;
-        font-weight: 700;
+        font-size: 1.4rem;
+        font-weight: 800;
         color: #0f172a;
       }
-      .dash-card.danger { border-left: 4px solid #ef4444; }
+      .dash-card.danger { border-left: 4px solid #ef4444; background: #fef2f2; border-color: #fecaca; }
       .dash-card.danger .val { color: #dc2626; }
-      .dash-card.warn { border-left: 4px solid #f59e0b; }
+      .dash-card.warn { border-left: 4px solid #f59e0b; background: #fffbeb; border-color: #fde68a; }
       .dash-card.warn .val { color: #d97706; }
-      .dash-card.success { border-left: 4px solid #10b981; }
+      .dash-card.success { border-left: 4px solid #10b981; background: #f0fdf4; border-color: #bbf7d0; }
       .dash-card.success .val { color: #059669; }
-      .dash-card.info { border-left: 4px solid #3b82f6; }
+      .dash-card.info { border-left: 4px solid #3b82f6; background: #eff6ff; border-color: #bfdbfe; }
       .dash-card.info .val { color: #2563eb; }
       .dash-card.highlight {
         background: #fffbeb;
         border-color: #fcd34d;
-        border-left: 4px solid #f59e0b;
+        border-left: 4px solid #d97706;
       }
       .dash-card.highlight .val { color: #b45309; }
+      .dash-card.neutral {
+        border-left: 4px solid #64748b;
+      }
     </style>
   </head>
   <body>
@@ -905,56 +921,59 @@
         </div>
 
         <div class="dash-section">
-          <h2><span>Contas Vencidas (Total Histórico)</span> <span style="font-weight:700; color:#dc2626;" id="dash-vencidas-total">R$ 0,00</span></h2>
+          <h2><span>1. Resumo de Despesas (A Pagar)</span></h2>
+          <p class="dash-desc">Todas as contas vencidas (histórico) mais as contas que ainda precisam ser pagas no mês selecionado. Engloba tanto PJ quanto PF.</p>
           <div class="dash-grid">
             <div class="dash-card danger">
-              <div class="label">Escritório (PJ)</div>
-              <div class="val" id="dash-vencidas-pj">R$ 0,00</div>
+              <div class="label">Vencidas Totais (PJ + PF)</div>
+              <div class="val" id="dash-vencidas-total">R$ 0,00</div>
             </div>
-            <div class="dash-card danger">
-              <div class="label">Pessoal (PF)</div>
-              <div class="val" id="dash-vencidas-pf">R$ 0,00</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="dash-section">
-          <h2><span>Contas a Pagar (Mês Atual)</span> <span style="font-weight:700;" id="dash-pagar-total">R$ 0,00</span></h2>
-          <div class="dash-grid">
             <div class="dash-card warn">
-              <div class="label">Pendente Geral</div>
+              <div class="label">Pendentes no Mês (PJ + PF)</div>
               <div class="val" id="dash-pagar-pendente">R$ 0,00</div>
             </div>
+            <div class="dash-card neutral">
+              <div class="label">Total a Desembolsar</div>
+              <div class="val" id="dash-desembolso-total">R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-section">
+          <h2><span>2. Resumo de Receitas (A Receber)</span></h2>
+          <p class="dash-desc">Dinheiro previsto para entrar no caixa do escritório (PJ). Inclui recebimentos atrasados e recebimentos do mês selecionado.</p>
+          <div class="dash-grid">
             <div class="dash-card success">
-              <div class="label">Pago Geral</div>
-              <div class="val" id="dash-pagar-pago">R$ 0,00</div>
+              <div class="label">A Receber (Garantido)</div>
+              <div class="val" id="dash-receitas-certas">R$ 0,00</div>
             </div>
-            <div class="dash-card">
-              <div class="label">Total PJ</div>
-              <div class="val" id="dash-pagar-pj">R$ 0,00</div>
-            </div>
-            <div class="dash-card">
-              <div class="label">Total PF</div>
-              <div class="val" id="dash-pagar-pf">R$ 0,00</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="dash-section">
-          <h2><span>Contas a Receber (Mês Atual)</span> <span style="font-weight:700; color:#2563eb;" id="dash-receber-total">R$ 0,00</span></h2>
-          <div class="dash-grid">
-            <div class="dash-card info">
-              <div class="label">Receber PJ</div>
-              <div class="val" id="dash-receber-pj">R$ 0,00</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="dash-section">
-          <h2>Pró-labore Mínimo Pendente</h2>
-          <p style="font-size:0.85rem; color:#64748b; margin-bottom:12px;">(Soma das contas vencidas e a pagar pendentes da Pessoa Física)</p>
-          <div class="dash-grid">
             <div class="dash-card highlight">
+              <div class="label">Honorários a Definir (Estimativa)</div>
+              <div class="val" id="dash-receitas-estimativa">R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-section" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+          <h2><span>3. Previsão de Saldo (Receitas vs Despesas)</span></h2>
+          <p class="dash-desc">Visão de como ficará o seu caixa se você pagar todas as suas pendências (vencidas e do mês selecionado) com o dinheiro que tem a receber.</p>
+          <div class="dash-grid">
+            <div class="dash-card" id="card-saldo-certo">
+              <div class="label">Cenário Garantido (Somente receitas certas)</div>
+              <div class="val" id="dash-saldo-certo">R$ 0,00</div>
+            </div>
+            <div class="dash-card" id="card-saldo-otimista">
+              <div class="label">Cenário Otimista (Com honorários a definir)</div>
+              <div class="val" id="dash-saldo-otimista">R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-section">
+          <h2><span>Pró-labore Mínimo Pendente</span></h2>
+          <p class="dash-desc" style="margin-bottom: 12px;">Soma exata de todas as suas contas da Pessoa Física (PF) que precisam ser pagas (vencidas + pendentes do mês). É o valor que o escritório precisa te repassar para cobrir seus custos.</p>
+          <div class="dash-grid">
+            <div class="dash-card info" style="max-width: 300px;">
               <div class="label">Valor a transferir (PF)</div>
               <div class="val" id="dash-prolabore">R$ 0,00</div>
             </div>
@@ -2285,48 +2304,64 @@
         const v = view.dashboard;
         const k = mkey(v.y, v.m);
 
-        // Vencidas
-        let vencidasPjTotal = 0;
-        let vencidasPfTotal = 0;
+        // 1. Despesas Pendentes (Vencidas Históricas + Pendentes do Mês Atual)
+        let vencidasPj = 0, vencidasPf = 0;
         for (const mk in store.pagar) {
-          store.pagar[mk].forEach(c => { if (!c.paid && c.date < TODAY_STR) vencidasPjTotal += c.value; });
+          store.pagar[mk].forEach(c => { if (!c.paid && c.date < TODAY_STR) vencidasPj += c.value; });
         }
         for (const mk in store.pagarPF) {
-          store.pagarPF[mk].forEach(c => { if (!c.paid && c.date < TODAY_STR) vencidasPfTotal += c.value; });
+          store.pagarPF[mk].forEach(c => { if (!c.paid && c.date < TODAY_STR) vencidasPf += c.value; });
         }
-        document.getElementById("dash-vencidas-pj").textContent = "R$ " + fmt(vencidasPjTotal);
-        document.getElementById("dash-vencidas-pf").textContent = "R$ " + fmt(vencidasPfTotal);
-        document.getElementById("dash-vencidas-total").textContent = "R$ " + fmt(vencidasPjTotal + vencidasPfTotal);
+        const vencidasTotal = vencidasPj + vencidasPf;
 
-        // Pagar (Mês atual)
-        const listPj = store.pagar[k] || [];
-        const listPf = store.pagarPF[k] || [];
-        let pagarPjPend = 0, pagarPjPago = 0;
-        let pagarPfPend = 0, pagarPfPago = 0;
+        const listPagarPj = store.pagar[k] || [];
+        const listPagarPf = store.pagarPF[k] || [];
+        let pagarPendPj = 0, pagarPendPf = 0;
         
-        listPj.forEach(c => c.paid ? pagarPjPago += c.value : pagarPjPend += c.value);
-        listPf.forEach(c => c.paid ? pagarPfPago += c.value : pagarPfPend += c.value);
+        listPagarPj.forEach(c => { if(!c.paid && c.date >= TODAY_STR) pagarPendPj += c.value; });
+        listPagarPf.forEach(c => { if(!c.paid && c.date >= TODAY_STR) pagarPendPf += c.value; });
+        
+        const aPagarMesTotal = pagarPendPj + pagarPendPf;
+        const desembolsoTotal = vencidasTotal + aPagarMesTotal;
 
-        const pendGeral = pagarPjPend + pagarPfPend;
-        const pagoGeral = pagarPjPago + pagarPfPago;
-        const totalPj = pagarPjPend + pagarPjPago;
-        const totalPf = pagarPfPend + pagarPfPago;
+        document.getElementById("dash-vencidas-total").textContent = "R$ " + fmt(vencidasTotal);
+        document.getElementById("dash-pagar-pendente").textContent = "R$ " + fmt(aPagarMesTotal);
+        document.getElementById("dash-desembolso-total").textContent = "R$ " + fmt(desembolsoTotal);
 
-        document.getElementById("dash-pagar-pj").textContent = "R$ " + fmt(totalPj);
-        document.getElementById("dash-pagar-pf").textContent = "R$ " + fmt(totalPf);
-        document.getElementById("dash-pagar-pendente").textContent = "R$ " + fmt(pendGeral);
-        document.getElementById("dash-pagar-pago").textContent = "R$ " + fmt(pagoGeral);
-        document.getElementById("dash-pagar-total").textContent = "R$ " + fmt(totalPj + totalPf);
-
-        // Receber (Mês atual PJ)
+        // 2. Receitas Pendentes
+        let receberAtrasado = 0;
+        for (const mk in store.receber) {
+          store.receber[mk].forEach(c => { if (!c.paid && c.date < TODAY_STR) receberAtrasado += c.value; });
+        }
+        
         const listRecPj = store.receber[k] || [];
-        const totalRecPj = listRecPj.reduce((s, c) => s + c.value, 0);
-        document.getElementById("dash-receber-pj").textContent = "R$ " + fmt(totalRecPj);
-        document.getElementById("dash-receber-total").textContent = "R$ " + fmt(totalRecPj);
+        let receberMes = 0;
+        listRecPj.forEach(c => { if(!c.paid && c.date >= TODAY_STR) receberMes += c.value; });
+        
+        const receberTotal = receberAtrasado + receberMes;
+        
+        let honorariosEstimativa = 0;
+        store.honorarios.forEach(h => { honorariosEstimativa += (h.taquesValue || 0); });
 
-        // Pró-labore Mínimo Pendente
-        // Contas vencidas do PF + Contas pendentes do PF no mês atual
-        const prolabore = vencidasPfTotal + pagarPfPend;
+        document.getElementById("dash-receitas-certas").textContent = "R$ " + fmt(receberTotal);
+        document.getElementById("dash-receitas-estimativa").textContent = "R$ " + fmt(honorariosEstimativa);
+
+        // 3. Previsão de Saldo
+        const saldoCerto = receberTotal - desembolsoTotal;
+        const saldoOtimista = (receberTotal + honorariosEstimativa) - desembolsoTotal;
+
+        const elSaldoCerto = document.getElementById("dash-saldo-certo");
+        const cardSaldoCerto = document.getElementById("card-saldo-certo");
+        elSaldoCerto.textContent = "R$ " + fmt(saldoCerto);
+        cardSaldoCerto.className = "dash-card " + (saldoCerto < 0 ? "danger" : "success");
+
+        const elSaldoOtimista = document.getElementById("dash-saldo-otimista");
+        const cardSaldoOtimista = document.getElementById("card-saldo-otimista");
+        elSaldoOtimista.textContent = "R$ " + fmt(saldoOtimista);
+        cardSaldoOtimista.className = "dash-card " + (saldoOtimista < 0 ? "danger" : "success");
+
+        // 4. Pró-labore Mínimo Pendente
+        const prolabore = vencidasPf + pagarPendPf;
         document.getElementById("dash-prolabore").textContent = "R$ " + fmt(prolabore);
       }
 
