@@ -440,13 +440,11 @@ async function load(){
     updateSaveStatus();
   }
   
-  const migKey = 'mig_hon_2';
-  if(!localStorage.getItem(migKey)) {
-    store.honorarios.push({client: 'Fábio Rodrigo Neves', title: 'Honorários - Definição', value: 8000, taquesValue: 4000, date: TODAY_STR, situacao: 'Aguardando definição', obs: '50% Taques', createdAt: new Date().toISOString()});
-    store.honorarios.push({client: 'Edivaldo Dobrychtop', title: 'Honorários - Definição', value: 12000, taquesValue: 6000, date: TODAY_STR, situacao: 'Aguardando definição', obs: '50% Taques', createdAt: new Date().toISOString()});
-    store.honorarios.push({client: 'Pedro Colaço', title: 'Honorários - Definição', value: 8000, taquesValue: 4000, date: TODAY_STR, situacao: 'Aguardando definição', obs: '50% Taques', createdAt: new Date().toISOString()});
-    store.honorarios.push({client: 'Faurin Batista', title: 'Honorários - Definição', value: 30000, taquesValue: 15000, date: TODAY_STR, situacao: 'Aguardando definição', obs: '50% Taques', createdAt: new Date().toISOString()});
-    localStorage.setItem(migKey, '1');
+  // Cleanup duplicates
+  const migKey3 = 'mig_hon_dedup';
+  if(!localStorage.getItem(migKey3)) {
+    store.honorarios = store.honorarios.filter(h => !(h.obs && h.obs.includes('Líquido escritório')));
+    localStorage.setItem(migKey3, '1');
     save(false);
   }
 
